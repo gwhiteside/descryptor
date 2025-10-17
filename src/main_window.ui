@@ -29,7 +29,7 @@
       <property name="orientation">
        <enum>Qt::Orientation::Horizontal</enum>
       </property>
-      <widget class="QListWidget" name="listImageSelect">
+      <widget class="QListView" name="imageListView">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Ignored">
          <horstretch>1</horstretch>
@@ -79,7 +79,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="GraphicsView" name="graphicsviewImage">
+         <widget class="GraphicsView" name="imageGraphicsView">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>2</horstretch>

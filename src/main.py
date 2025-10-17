@@ -6,7 +6,7 @@ if __name__ == "__main__":
 	application = QApplication(sys.argv)
 
 	application.setApplicationName("descryptor")
-	application.setApplicationDisplayName("descryptor")
+	application.setApplicationDisplayName("Select Folder")
 
 	window = MainWindow()
 	window.show()
