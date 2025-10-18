@@ -4,9 +4,13 @@ from PyQt6.QtCore import QItemSelectionRange, Qt
 from PyQt6.QtGui import QPixmap, QPainter, QIcon, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
 	QMainWindow, QGraphicsScene,
-	QFileDialog, QMessageBox, QListView, QGraphicsView
+	QFileDialog, QMessageBox, QListView, QGraphicsView, QDockWidget
 )
 from PyQt6.uic import loadUi
+
+from src.float_dock_widget import FloatDockWidget
+from src.graphics_view import GraphicsView
+
 
 class MainWindow(QMainWindow):
 	def __init__(self):
@@ -17,24 +21,44 @@ class MainWindow(QMainWindow):
 
 		# Load interface
 		loadUi('src/main_window.ui', self)
-		self.imageGraphicsView: QGraphicsView = self.findChild(QGraphicsView, "imageGraphicsView")
-		self.imageListView: QListView = self.findChild(QListView, "imageListView")
+		self.viewerDockWidget: FloatDockWidget = loadUi("src/viewer_dock_widget.ui")
+		self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.viewerDockWidget)
+
+		# Small workaround to get dock widgets to use all space. Central widget must be set after
+		# dock widgets are added, but loadUi sets the central widget first. So do it again here.
+		self.cw = self.centralWidget()
+		self.setCentralWidget(None)
+		self.setCentralWidget(self.cw)
+
+		#self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.viewerDockWidget)
+
+
+		# Set some explicit references to make the IDE experience more pleasant
+		self.viewerGraphicsView: GraphicsView = self.findChild(GraphicsView, "viewerGraphicsView")
+		self.selectorListView: QListView = self.findChild(QListView, "selectorListView")
+		self.selectorDockWidget: QDockWidget = self.findChild(QDockWidget, "selectorDockWidget")
+		#self.viewerDockWidget: FloatDockWidget = self.findChild(FloatDockWidget, "viewerDockWidget")
+		self.imgtagsDockWidget: QDockWidget = self.findChild(QDockWidget, "imgtagsDockWidget")
+		self.dirtagsDockWidget: QDockWidget = self.findChild(QDockWidget, "dirtagsDockWidget")
+
+		# Setup dock widgets
+		self.splitDockWidget(self.selectorDockWidget, self.viewerDockWidget, Qt.Orientation.Horizontal)
+		self.splitDockWidget(self.viewerDockWidget, self.imgtagsDockWidget, Qt.Orientation.Horizontal)
+		self.splitDockWidget(self.imgtagsDockWidget, self.dirtagsDockWidget, Qt.Orientation.Horizontal)
 
 		# Setup list view
-		self.imageListViewModel = QStandardItemModel()
-		self.imageListView.setModel(self.imageListViewModel)
+		self.selectorListViewModel = QStandardItemModel()
+		self.selectorListView.setModel(self.selectorListViewModel)
 
 		# Setup graphics view
 		self.scene = QGraphicsScene()
-		self.imageGraphicsView.setScene(self.scene)
-		self.imageGraphicsView.setRenderHint(QPainter.RenderHint.Antialiasing)
+		self.viewerGraphicsView.setScene(self.scene)
+		self.viewerGraphicsView.setRenderHint(QPainter.RenderHint.Antialiasing)
 
 		# Connect signals
-		self.actionExit.triggered.connect(self.close)
-		self.actionOpen.triggered.connect(self.open_directory)
-		self.imageListView.selectionModel().selectionChanged.connect(self.display_image)
-
-
+		#self.actionExit.triggered.connect(self.close)
+		#self.actionOpen.triggered.connect(self.open_directory)
+		self.selectorListView.selectionModel().selectionChanged.connect(self.display_image)
 
 		# Auto load image directory for testing
 		self.open_directory("./images")
@@ -54,7 +78,7 @@ class MainWindow(QMainWindow):
 
 		try:
 			# Clear previous content
-			self.imageListViewModel.clear()
+			self.selectorListViewModel.clear()
 
 			# Supported image extensions
 			image_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff'}
@@ -83,7 +107,7 @@ class MainWindow(QMainWindow):
 					# Fallback icon for failed images
 					item.setIcon(QIcon())
 
-				self.imageListViewModel.appendRow(item)
+				self.selectorListViewModel.appendRow(item)
 
 			#self.statusbarMain.showMessage(f"Loaded {len(image_paths)} images")
 
@@ -100,7 +124,7 @@ class MainWindow(QMainWindow):
 
 		index = selected_items.indexes()[0]  # Take the first selected item
 		#path = item.data(Qt.ItemDataRole.UserRole)
-		path = self.imageListViewModel.itemFromIndex(index).data(Qt.ItemDataRole.UserRole)
+		path = self.selectorListViewModel.itemFromIndex(index).data(Qt.ItemDataRole.UserRole)
 		self.current_image_path = path
 
 		try:
@@ -112,7 +136,7 @@ class MainWindow(QMainWindow):
 			self.scene.clear()
 			self.scene.addPixmap(pixmap)
 
-			self.imageGraphicsView.fitInView(self.scene.itemsBoundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
+			self.viewerGraphicsView.fitInView(self.scene.itemsBoundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
 
 		except Exception as e:
 			QMessageBox.critical(self, "Error", f"Failed to display image: {str(e)}")
