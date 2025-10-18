@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>482</width>
-    <height>884</height>
+    <width>569</width>
+    <height>602</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -68,7 +68,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>482</width>
+     <width>569</width>
      <height>30</height>
     </rect>
    </property>
@@ -186,48 +186,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="FloatDockWidget" name="viewerDockWidget">
-   <property name="sizePolicy">
-    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-     <horstretch>0</horstretch>
-     <verstretch>0</verstretch>
-    </sizepolicy>
-   </property>
-   <property name="windowTitle">
-    <string>Viewer</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>1</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_11">
-    <layout class="QVBoxLayout" name="verticalLayout_4">
-     <item>
-      <widget class="GraphicsView" name="viewerGraphicsView">
-       <property name="dragMode">
-        <enum>QGraphicsView::DragMode::ScrollHandDrag</enum>
-       </property>
-       <property name="transformationAnchor">
-        <enum>QGraphicsView::ViewportAnchor::AnchorUnderMouse</enum>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-  </widget>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>GraphicsView</class>
-   <extends>QGraphicsView</extends>
-   <header>src/graphics_view</header>
-  </customwidget>
-  <customwidget>
-   <class>FloatDockWidget</class>
-   <extends>QDockWidget</extends>
-   <header>src/float_dock_widget</header>
-   <container>1</container>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>

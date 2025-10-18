@@ -21,6 +21,8 @@ class MainWindow(QMainWindow):
 
 		# Load interface
 		loadUi('src/main_window.ui', self)
+		self.viewerDockWidget: FloatDockWidget = loadUi("src/viewer_dock_widget.ui")
+		self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.viewerDockWidget)
 
 		# Small workaround to get dock widgets to use all space. Central widget must be set after
 		# dock widgets are added, but loadUi sets the central widget first. So do it again here.
@@ -28,11 +30,14 @@ class MainWindow(QMainWindow):
 		self.setCentralWidget(None)
 		self.setCentralWidget(self.cw)
 
+		#self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.viewerDockWidget)
+
+
 		# Set some explicit references to make the IDE experience more pleasant
 		self.viewerGraphicsView: GraphicsView = self.findChild(GraphicsView, "viewerGraphicsView")
 		self.selectorListView: QListView = self.findChild(QListView, "selectorListView")
 		self.selectorDockWidget: QDockWidget = self.findChild(QDockWidget, "selectorDockWidget")
-		self.viewerDockWidget: FloatDockWidget = self.findChild(FloatDockWidget, "viewerDockWidget")
+		#self.viewerDockWidget: FloatDockWidget = self.findChild(FloatDockWidget, "viewerDockWidget")
 		self.imgtagsDockWidget: QDockWidget = self.findChild(QDockWidget, "imgtagsDockWidget")
 		self.dirtagsDockWidget: QDockWidget = self.findChild(QDockWidget, "dirtagsDockWidget")
 
