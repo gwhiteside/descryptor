@@ -12,15 +12,13 @@ class MainWindow(QMainWindow):
 	def __init__(self):
 		super().__init__()
 
+		# Instance variables
+		self.current_image_path = None
+
 		# Load interface
 		loadUi('src/main_window.ui', self)
 		self.imageGraphicsView: QGraphicsView = self.findChild(QGraphicsView, "imageGraphicsView")
 		self.imageListView: QListView = self.findChild(QListView, "imageListView")
-
-		# Connect signals
-		self.actionExit.triggered.connect(self.close)
-		self.actionOpen.triggered.connect(self.open_directory)
-		self.imageListView.selectionModel().selectionChanged.connect(self.display_image)
 
 		# Setup list view
 		self.imageListViewModel = QStandardItemModel()
@@ -31,8 +29,12 @@ class MainWindow(QMainWindow):
 		self.imageGraphicsView.setScene(self.scene)
 		self.imageGraphicsView.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-		# Instance variables
-		self.current_image_path = None
+		# Connect signals
+		self.actionExit.triggered.connect(self.close)
+		self.actionOpen.triggered.connect(self.open_directory)
+		self.imageListView.selectionModel().selectionChanged.connect(self.display_image)
+
+
 
 		# Auto load image directory for testing
 		self.open_directory("./images")
