@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PyQt6.QtCore import QItemSelectionRange, Qt
+from PyQt6.QtCore import QItemSelectionRange, Qt, QStringListModel, QSize
 from PyQt6.QtGui import QPixmap, QPainter, QIcon, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
 	QMainWindow, QGraphicsScene,
@@ -10,6 +10,8 @@ from PyQt6.uic import loadUi
 
 from src.float_dock_widget import FloatDockWidget
 from src.graphics_view import GraphicsView
+from src.styled_item_delegate import StyledItemDelegate
+from src.tag_image import TagImage
 
 
 class MainWindow(QMainWindow):
@@ -18,6 +20,7 @@ class MainWindow(QMainWindow):
 
 		# Instance variables
 		self.current_image_path = None
+		self.directory_tags_set: set = set()
 
 		# Load interface
 		loadUi('src/main_window.ui', self)
@@ -40,17 +43,32 @@ class MainWindow(QMainWindow):
 		#self.viewerDockWidget: FloatDockWidget = self.findChild(FloatDockWidget, "viewerDockWidget")
 		self.imgtagsDockWidget: QDockWidget = self.findChild(QDockWidget, "imgtagsDockWidget")
 		self.dirtagsDockWidget: QDockWidget = self.findChild(QDockWidget, "dirtagsDockWidget")
+		self.imgtagListView: QListView = self.findChild(QListView, "imgtagListView")
+		self.dirtagListView: QListView = self.findChild(QListView, "dirtagListView")
 
-		# Setup dock widgets
+		# Set up dock widgets
 		self.splitDockWidget(self.selectorDockWidget, self.viewerDockWidget, Qt.Orientation.Horizontal)
 		self.splitDockWidget(self.viewerDockWidget, self.imgtagsDockWidget, Qt.Orientation.Horizontal)
 		self.splitDockWidget(self.imgtagsDockWidget, self.dirtagsDockWidget, Qt.Orientation.Horizontal)
 
-		# Setup list view
+		# Set up selector list view model
 		self.selectorListViewModel = QStandardItemModel()
 		self.selectorListView.setModel(self.selectorListViewModel)
+		self.selectorListView.setIconSize(QSize(128, 128))
+		self.selectorListView.setViewMode(QListView.ViewMode.IconMode)
+		self.selectorListView.setResizeMode(QListView.ResizeMode.Adjust)
+		self.selectorListView.setUniformItemSizes(True)
 
-		# Setup graphics view
+		# Set up image tags list view model
+		self.imgtagListViewModel = QStringListModel()
+		self.imgtagListView.setModel(self.imgtagListViewModel)
+		self.imgtagListView.setItemDelegate(StyledItemDelegate())
+
+		# Set up directory tags list view model
+		self.dirtagsListViewModel = QStringListModel()
+		self.dirtagListView.setModel(self.dirtagsListViewModel)
+
+		# Set up graphics view
 		self.scene = QGraphicsScene()
 		self.viewerGraphicsView.setScene(self.scene)
 		self.viewerGraphicsView.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -61,7 +79,8 @@ class MainWindow(QMainWindow):
 		self.selectorListView.selectionModel().selectionChanged.connect(self.display_image)
 
 		# Auto load image directory for testing
-		self.open_directory("./images")
+		#self.open_directory("./images")
+		self.open_directory("***REMOVED***")
 
 	def open_directory(self, directory: str | None = None):
 		"""Open directory dialog and load images"""
@@ -84,30 +103,26 @@ class MainWindow(QMainWindow):
 			image_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff'}
 
 			# Scan for images
-			image_paths = []
+			tag_images: list[TagImage] = []
 			for file_path in Path(directory).iterdir():
 				if file_path.is_file() and file_path.suffix.lower() in image_extensions:
-					image_paths.append(file_path)
+					tag_images.append(TagImage(file_path))
 
 			# Sort files alphabetically
-			image_paths.sort()
+			tag_images.sort()
 
-			# Add thumbnails to list
-			for path in image_paths:
-				item = QStandardItem(path.name)
-				item.setData(str(path), Qt.ItemDataRole.UserRole)
-
-				# Create thumbnail
-				pixmap = QPixmap(str(path))
-				if not pixmap.isNull():
-					# Scale thumbnail
-					thumbnail = pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-					item.setIcon(QIcon(thumbnail))
-				else:
-					# Fallback icon for failed images
-					item.setIcon(QIcon())
-
+			for image in tag_images:
+				# Add images to selector
+				item = QStandardItem(image.path.name)
+				item.setData(image, Qt.ItemDataRole.UserRole)
+				item.setIcon(image.thumbnail)
 				self.selectorListViewModel.appendRow(item)
+
+				# Collect unique tags for directory tags view
+				self.directory_tags_set.update(image.tags)
+
+			self.dirtagsListViewModel.setStringList(self.directory_tags_set)
+			self.dirtagsListViewModel.sort(0, Qt.SortOrder.AscendingOrder)
 
 			#self.statusbarMain.showMessage(f"Loaded {len(image_paths)} images")
 
@@ -116,15 +131,17 @@ class MainWindow(QMainWindow):
 
 	def display_image(self, selected_items: QItemSelectionRange, deselected_items):
 		"""Display selected image in graphics view"""
-		# Get currently selected items
-		#selected_items = self.listImageSelect.selectedItems()
 
 		if not selected_items:
 			return
 
 		index = selected_items.indexes()[0]  # Take the first selected item
-		#path = item.data(Qt.ItemDataRole.UserRole)
-		path = self.selectorListViewModel.itemFromIndex(index).data(Qt.ItemDataRole.UserRole)
+
+		tag_image:TagImage = self.selectorListViewModel.itemFromIndex(index).data(Qt.ItemDataRole.UserRole)
+
+		self.imgtagListViewModel.setStringList(tag_image.tags)
+
+		path = str(tag_image.path)
 		self.current_image_path = path
 
 		try:
@@ -140,3 +157,5 @@ class MainWindow(QMainWindow):
 
 		except Exception as e:
 			QMessageBox.critical(self, "Error", f"Failed to display image: {str(e)}")
+
+
