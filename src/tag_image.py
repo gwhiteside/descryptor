@@ -20,6 +20,9 @@ class TagImage:
 	def __lt__(self, other):
 		return self.path < other.path
 
+	def add_tag(self):
+		self._modified = True
+
 	@property
 	def thumbnail(self):
 		if not self._thumbnail:

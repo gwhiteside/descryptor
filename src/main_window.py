@@ -4,7 +4,7 @@ from PyQt6.QtCore import QItemSelectionRange, Qt, QStringListModel, QSize
 from PyQt6.QtGui import QPixmap, QPainter, QIcon, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
 	QMainWindow, QGraphicsScene,
-	QFileDialog, QMessageBox, QListView, QGraphicsView, QDockWidget
+	QFileDialog, QMessageBox, QListView, QDockWidget, QLineEdit
 )
 from PyQt6.uic import loadUi
 
@@ -45,6 +45,7 @@ class MainWindow(QMainWindow):
 		self.dirtagsDockWidget: QDockWidget = self.findChild(QDockWidget, "dirtagsDockWidget")
 		self.imgtagListView: QListView = self.findChild(QListView, "imgtagListView")
 		self.dirtagListView: QListView = self.findChild(QListView, "dirtagListView")
+		self.imgtagLineEdit: QLineEdit = self.findChild(QLineEdit, "imgtagLineEdit")
 
 		# Set up dock widgets
 		self.splitDockWidget(self.selectorDockWidget, self.viewerDockWidget, Qt.Orientation.Horizontal)
@@ -77,10 +78,19 @@ class MainWindow(QMainWindow):
 		#self.actionExit.triggered.connect(self.close)
 		#self.actionOpen.triggered.connect(self.open_directory)
 		self.selectorListView.selectionModel().selectionChanged.connect(self.display_image)
+		self.imgtagLineEdit.returnPressed.connect(self.add_tag)
 
 		# Auto load image directory for testing
 		#self.open_directory("./images")
 		self.open_directory("***REMOVED***")
+
+	def add_tag(self):
+		model = self.imgtagListViewModel
+		input = self.imgtagLineEdit
+		model.insertRow(model.rowCount())
+		index = model.index(model.rowCount() - 1)
+		model.setData(index, input.text())
+		input.clear()
 
 	def open_directory(self, directory: str | None = None):
 		"""Open directory dialog and load images"""
@@ -88,7 +98,9 @@ class MainWindow(QMainWindow):
 		if not directory:
 
 			directory = QFileDialog.getExistingDirectory(
-				self, "Select Directory", "",
+				self,
+				"Select Directory",
+				"",
 				QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks
 			)
 
@@ -123,6 +135,7 @@ class MainWindow(QMainWindow):
 
 			self.dirtagsListViewModel.setStringList(self.directory_tags_set)
 			self.dirtagsListViewModel.sort(0, Qt.SortOrder.AscendingOrder)
+			self.dirtagsDockWidget.setWindowTitle("Directory Tags ({})".format(len(self.directory_tags_set)))
 
 			#self.statusbarMain.showMessage(f"Loaded {len(image_paths)} images")
 
@@ -140,6 +153,7 @@ class MainWindow(QMainWindow):
 		tag_image:TagImage = self.selectorListViewModel.itemFromIndex(index).data(Qt.ItemDataRole.UserRole)
 
 		self.imgtagListViewModel.setStringList(tag_image.tags)
+		self.imgtagsDockWidget.setWindowTitle("Image Tags ({})".format(len(tag_image.tags)))
 
 		path = str(tag_image.path)
 		self.current_image_path = path
