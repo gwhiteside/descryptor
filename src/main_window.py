@@ -8,10 +8,14 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.uic import loadUi
 
+from src.directory_tag_model import DirectoryTagModel
 from src.float_dock_widget import FloatDockWidget
 from src.graphics_view import GraphicsView
+from src.image_tag_model import ImageTagModel
 from src.styled_item_delegate import StyledItemDelegate
 from src.tag_image import TagImage
+from src.tag_image_directory import TagImageDirectory
+from src.tag_image_list_model import TagImageListModel
 
 
 class MainWindow(QMainWindow):
@@ -19,8 +23,12 @@ class MainWindow(QMainWindow):
 		super().__init__()
 
 		# Instance variables
-		self.current_image_path = None
-		self.directory_tags_set: set = set()
+		self.current_selector_index = None
+		self.current_tag_image: TagImage | None = None
+		#self.directory_tags_set: set = set()
+		#self.tag_image_directory = TagImageDirectory()
+		self.tag_image_list_model = TagImageListModel()
+		self.directory_tag_model = DirectoryTagModel()
 
 		# Load interface
 		loadUi('src/main_window.ui', self)
@@ -34,7 +42,6 @@ class MainWindow(QMainWindow):
 		self.setCentralWidget(self.cw)
 
 		#self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.viewerDockWidget)
-
 
 		# Set some explicit references to make the IDE experience more pleasant
 		self.viewerGraphicsView: GraphicsView = self.findChild(GraphicsView, "viewerGraphicsView")
@@ -53,21 +60,22 @@ class MainWindow(QMainWindow):
 		self.splitDockWidget(self.imgtagsDockWidget, self.dirtagsDockWidget, Qt.Orientation.Horizontal)
 
 		# Set up selector list view model
-		self.selectorListViewModel = QStandardItemModel()
-		self.selectorListView.setModel(self.selectorListViewModel)
+		#self.selectorListViewModel = QStandardItemModel()
+		self.selectorListView.setModel(self.tag_image_list_model)
 		self.selectorListView.setIconSize(QSize(128, 128))
+		self.selectorListView.setSpacing(8)
 		self.selectorListView.setViewMode(QListView.ViewMode.IconMode)
 		self.selectorListView.setResizeMode(QListView.ResizeMode.Adjust)
 		self.selectorListView.setUniformItemSizes(True)
 
 		# Set up image tags list view model
-		self.imgtagListViewModel = QStringListModel()
+		self.imgtagListViewModel = ImageTagModel()
 		self.imgtagListView.setModel(self.imgtagListViewModel)
-		self.imgtagListView.setItemDelegate(StyledItemDelegate())
+		#self.imgtagListView.setItemDelegate(StyledItemDelegate())
 
 		# Set up directory tags list view model
-		self.dirtagsListViewModel = QStringListModel()
-		self.dirtagListView.setModel(self.dirtagsListViewModel)
+		#self.dirtagsListViewModel = QStringListModel()
+		self.dirtagListView.setModel(self.directory_tag_model)
 
 		# Set up graphics view
 		self.scene = QGraphicsScene()
@@ -78,6 +86,7 @@ class MainWindow(QMainWindow):
 		#self.actionExit.triggered.connect(self.close)
 		#self.actionOpen.triggered.connect(self.open_directory)
 		self.selectorListView.selectionModel().selectionChanged.connect(self.display_image)
+		self.imgtagListViewModel.tagsModified.connect(self.tag_image_list_model.tagsModified)
 		self.imgtagLineEdit.returnPressed.connect(self.add_tag)
 
 		# Auto load image directory for testing
@@ -85,57 +94,37 @@ class MainWindow(QMainWindow):
 		self.open_directory("***REMOVED***")
 
 	def add_tag(self):
-		model = self.imgtagListViewModel
-		input = self.imgtagLineEdit
-		model.insertRow(model.rowCount())
-		index = model.index(model.rowCount() - 1)
-		model.setData(index, input.text())
-		input.clear()
+		editor = self.imgtagLineEdit
+		model = self.tag_image_list_model
+		text = editor.text().strip()
+		#model.beginI
+		#self.current_tag_image.add_tag(text)
+		self.imgtagListViewModel.appendTag(text)
+		#model.layoutChanged.emit()
+		editor.clear()
 
-	def open_directory(self, directory: str | None = None):
+	def open_directory(self, path: str | None = None):
 		"""Open directory dialog and load images"""
 
-		if not directory:
-
-			directory = QFileDialog.getExistingDirectory(
+		if path is None:
+			path = QFileDialog.getExistingDirectory(
 				self,
 				"Select Directory",
 				"",
 				QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks
 			)
 
-			if not directory:
+			if not path:
 				return
 
+		directory = TagImageDirectory(path)
+
 		try:
-			# Clear previous content
-			self.selectorListViewModel.clear()
+			self.tag_image_list_model.setDirectory(directory)
+			self.directory_tag_model.load(directory)
+			#self.dirtagsListViewModel.setStringList(self.directory_tags_set)
 
-			# Supported image extensions
-			image_extensions = {'.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff'}
-
-			# Scan for images
-			tag_images: list[TagImage] = []
-			for file_path in Path(directory).iterdir():
-				if file_path.is_file() and file_path.suffix.lower() in image_extensions:
-					tag_images.append(TagImage(file_path))
-
-			# Sort files alphabetically
-			tag_images.sort()
-
-			for image in tag_images:
-				# Add images to selector
-				item = QStandardItem(image.path.name)
-				item.setData(image, Qt.ItemDataRole.UserRole)
-				item.setIcon(image.thumbnail)
-				self.selectorListViewModel.appendRow(item)
-
-				# Collect unique tags for directory tags view
-				self.directory_tags_set.update(image.tags)
-
-			self.dirtagsListViewModel.setStringList(self.directory_tags_set)
-			self.dirtagsListViewModel.sort(0, Qt.SortOrder.AscendingOrder)
-			self.dirtagsDockWidget.setWindowTitle("Directory Tags ({})".format(len(self.directory_tags_set)))
+			#self.dirtagsDockWidget.setWindowTitle("Directory Tags ({})".format(len(self.directory_tags_set)))
 
 			#self.statusbarMain.showMessage(f"Loaded {len(image_paths)} images")
 
@@ -150,13 +139,14 @@ class MainWindow(QMainWindow):
 
 		index = selected_items.indexes()[0]  # Take the first selected item
 
-		tag_image:TagImage = self.selectorListViewModel.itemFromIndex(index).data(Qt.ItemDataRole.UserRole)
+		tag_image: TagImage = self.tag_image_list_model.data(index, Qt.ItemDataRole.UserRole)
 
-		self.imgtagListViewModel.setStringList(tag_image.tags)
+		self.current_tag_image = tag_image
+
+		self.imgtagListViewModel.setTagImage(tag_image)
 		self.imgtagsDockWidget.setWindowTitle("Image Tags ({})".format(len(tag_image.tags)))
 
 		path = str(tag_image.path)
-		self.current_image_path = path
 
 		try:
 			pixmap = QPixmap(path)
