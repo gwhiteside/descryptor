@@ -6,15 +6,17 @@ from PyQt6.QtGui import QBrush, QColor
 from src.tag_image import TagImage
 
 class ImageTagModel(QAbstractListModel):
-	tagsModified = pyqtSignal(object)
+	tagsModified = pyqtSignal(TagImage)
 
 	def __init__(self, tag_image: TagImage | None = None):
 		super().__init__()
 		self.tag_image = tag_image
+		self.new_tags: list[str] = []
 		self.changed_background = QBrush(QColor(128, 0, 0, 50))
 
 	def appendTag(self, tag: str):
 		self.tag_image.add_tag(tag)
+		self.new_tags.append(tag)
 		index = self.index(len(self.tag_image.tags) - 1)
 		self.dataChanged.emit(index, index)
 		self.tagsModified.emit(self.tag_image)
@@ -28,15 +30,22 @@ class ImageTagModel(QAbstractListModel):
 
 	def data(self, index: QModelIndex, role: int):
 		tag = self.tag_image.tags[index.row()]
+
+		q = Qt.ItemDataRole
 		match role:
 			# case Qt.ItemDataRole.BackgroundRole:
 			# 	return self.changed_background if tag_image.modified else None
 			# case Qt.ItemDataRole.DecorationRole:
 			# 	return tag_image.thumbnail
-			case Qt.ItemDataRole.DisplayRole:
+			case q.DisplayRole:
 				return tag
-			case Qt.ItemDataRole.EditRole:
+			case q.EditRole:
 				return tag
+			case q.ForegroundRole:
+				if tag in self.new_tags:
+					return QColor("red")
+				else:
+					return None
 			# case Qt.ItemDataRole.UserRole:
 			# 	return tag_image
 			case _:

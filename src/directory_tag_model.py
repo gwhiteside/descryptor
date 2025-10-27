@@ -1,6 +1,7 @@
 from collections import Counter
 
 from PyQt6.QtCore import QAbstractItemModel, QAbstractListModel, QModelIndex, Qt
+from PyQt6.QtGui import QColor, QFont
 
 from src.tag_image import TagImage
 from src.tag_image_directory import TagImageDirectory
@@ -10,25 +11,59 @@ class DirectoryTagModel(QAbstractListModel):
 	def __init__(self, directory: TagImageDirectory | None = None):
 		super().__init__()
 		self.directory = None
+		self.current_image: TagImage | None = None
 		self.tag_map: dict[str, list[TagImage]] = {} # inverted index of tags to TagImages
 		self.__view_cache: list[str] = [] # cached sorted tags (with values) from tag_map
 		self.load(directory)
 
 	def data(self, index: QModelIndex, role: int):
 		tag = self.__view_cache[index.row()]
-		match role:
-			# case Qt.ItemDataRole.BackgroundRole:
-			# 	return self.changed_background if tag_image.modified else None
-			# case Qt.ItemDataRole.DecorationRole:
-			# 	return tag_image.thumbnail
-			case Qt.ItemDataRole.DisplayRole:
-				return tag
-			case Qt.ItemDataRole.EditRole:
-				return tag
-			# case Qt.ItemDataRole.UserRole:
-			# 	return tag_image
-			case _:
-				return None
+
+		q = Qt.ItemDataRole
+
+		if role == q.DisplayRole:
+			tag_count = len(self.tag_map[tag])
+			display_string = f"{tag} ({tag_count})"
+			return display_string
+		if role == q.EditRole:
+			return tag
+
+		if self.current_image is None:
+			return None
+
+		if role == q.FontRole:
+			testfont = QFont()
+			testfont.setBold(True)
+			return testfont if tag in self.current_image.tags else QFont()
+		if role == q.ForegroundRole:
+			return QColor("green") if tag in self.current_image.tags else None
+
+		return None
+
+
+
+
+		# match role:
+		# 	# case Qt.ItemDataRole.BackgroundRole:
+		# 	# 	return self.changed_background if tag_image.modified else None
+		# 	# case Qt.ItemDataRole.DecorationRole:
+		# 	# 	return tag_image.thumbnail
+		# 	case Qt.ItemDataRole.DisplayRole:
+		# 		return tag
+		# 	case Qt.ItemDataRole.EditRole:
+		# 		return tag
+		# 	case Qt.ItemDataRole.FontRole:
+		#
+		# 	case Qt.ItemDataRole.ForegroundRole:
+		# 		if self.current_image is not None:
+		# 			if tag in self.current_image.tags:
+		# 				return QColor("green")
+		#
+		# 		return None
+		# 	# case Qt.ItemDataRole.UserRole:
+		# 	# 	return tag_image
+		# 	case _:
+		# 		return None
 
 	def load(self, directory: TagImageDirectory):
 		if directory is None:
@@ -36,6 +71,9 @@ class DirectoryTagModel(QAbstractListModel):
 		self.directory = directory
 		self._build_tag_map()
 
+	def on_image_loaded(self, image: TagImage):
+		self.current_image = image
+		self.dataChanged.emit(QModelIndex(), QModelIndex(), [Qt.ItemDataRole.ForegroundRole])
 
 	def on_image_tags_modified(self, image: TagImage, old_tags: set[str], new_tags: set[str]):
 		added = new_tags - old_tags

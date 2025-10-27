@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PyQt6.QtCore import QItemSelectionRange, Qt, QStringListModel, QSize
+from PyQt6.QtCore import QItemSelectionRange, Qt, QStringListModel, QSize, pyqtSignal
 from PyQt6.QtGui import QPixmap, QPainter, QIcon, QStandardItem, QStandardItemModel
 from PyQt6.QtWidgets import (
 	QMainWindow, QGraphicsScene,
@@ -19,6 +19,8 @@ from src.tag_image_list_model import TagImageListModel
 
 
 class MainWindow(QMainWindow):
+	image_loaded = pyqtSignal(TagImage)
+
 	def __init__(self):
 		super().__init__()
 
@@ -85,6 +87,7 @@ class MainWindow(QMainWindow):
 		# Connect signals
 		#self.actionExit.triggered.connect(self.close)
 		#self.actionOpen.triggered.connect(self.open_directory)
+		self.image_loaded.connect(self.directory_tag_model.on_image_loaded)
 		self.selectorListView.selectionModel().selectionChanged.connect(self.display_image)
 		self.imgtagListViewModel.tagsModified.connect(self.tag_image_list_model.tagsModified)
 		self.imgtagLineEdit.returnPressed.connect(self.add_tag)
@@ -142,6 +145,7 @@ class MainWindow(QMainWindow):
 		tag_image: TagImage = self.tag_image_list_model.data(index, Qt.ItemDataRole.UserRole)
 
 		self.current_tag_image = tag_image
+		self.image_loaded.emit(tag_image)
 
 		self.imgtagListViewModel.setTagImage(tag_image)
 		self.imgtagsDockWidget.setWindowTitle("Image Tags ({})".format(len(tag_image.tags)))
