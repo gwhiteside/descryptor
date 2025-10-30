@@ -8,23 +8,66 @@ from src.tag_image import TagImage
 class ImageTagModel(QAbstractListModel):
 	tagsModified = pyqtSignal(TagImage)
 
+	# name data loader set_data_source
+
 	def __init__(self, tag_image: TagImage | None = None):
 		super().__init__()
 		self.tag_image = tag_image
 		self.new_tags: list[str] = []
 		self.changed_background = QBrush(QColor(128, 0, 0, 50))
 
-	def appendTag(self, tag: str):
-		self.tag_image.add_tag(tag)
+	def add_tag(self, tag: str):
+		self.insert_tag(tag)
+
+	def insert_tag(self, tag: str, index: int | None = None):
+		if index is None:
+			index = len(self.tag_image.tags)
+		self.beginInsertRows(QModelIndex(), index, index)
+		self.tag_image.insert_tag(tag, index)
 		self.new_tags.append(tag)
-		index = self.index(len(self.tag_image.tags) - 1)
-		self.dataChanged.emit(index, index)
+		self.endInsertRows()
 		self.tagsModified.emit(self.tag_image)
 
-	def setTagImage(self, tag_image: TagImage):
+	def remove_tag(self, tag: str):
+		""" Removes **all** instances of ``tag``.
+		"""
+		# Rebuilds whole layout, but simpler than calculating
+		self.layoutAboutToBeChanged()
+		self.tag_image.remove_tag(tag)
+		self.layoutChanged()
+		self.tagsModified.emit(self.tag_image)
+		# # doesn't require rebuilding the whole layout
+		# indices = sorted(i for i, s in enumerate(self.tag_image.tags) if s == tag)
+		# spans = []
+		# start = prev = None
+		# for i in indices:
+		# 	if start is None:
+		# 		start = prev = i
+		# 	elif i == prev + 1:
+		# 		prev = i
+		# 	else:
+		# 		spans.append((start, prev))
+		# 		start = prev = i
+		# if start is not None:
+		# 	spans.append((start, prev))
+		#
+		# for start, end in reversed(spans):  # remove from end to preserve earlier indices
+		# 	self.beginRemoveRows(QModelIndex(), start, end)
+		# 	del self.tag_image.tags[start:end + 1]
+		# 	self.tag_image.modified = True
+		# 	self.endRemoveRows()
+
+	def remove_tag_at(self, index: int):
+		self.beginRemoveRows(QModelIndex(), index, index)
+		self.tag_image.remove_tag_at(index)
+		self.endRemoveRows()
+		self.tagsModified.emit(self.tag_image)
+
+	def set_tag_image(self, tag_image: TagImage):
 		self.beginResetModel()
 		self.tag_image = tag_image
 		self.endResetModel()
+		self.tagsModified.emit(self.tag_image)
 
 	# overrides
 
@@ -59,6 +102,29 @@ class ImageTagModel(QAbstractListModel):
 			Qt.ItemFlag.ItemIsEditable
 		)
 
+	# def insertRow(self, row, parent=QModelIndex()):
+	# 	return super().insertRow(row, parent)
+	#
+	# def insertRows(self, row, count, parent=QModelIndex()):
+	# 	self.beginInsertRows(parent, row, row + count - 1)
+	#
+	# 	self.endInsertRows()
+	#
+	# 	self.tag_image.modified = True
+	# 	self.tagsModified.emit(self.tag_image)
+	# 	return True
+	#
+	# def removeRows(self, row, count, parent=QModelIndex()):
+	# 	if row < 0 or row + count > len(self.tag_image.tags):
+	# 		return False
+	#
+	# 	self.beginRemoveRows(parent, row, row + count - 1)
+	# 	self.tag_image.remove_tags(row, count)
+	# 	self.endRemoveRows()
+	# 	self.tagsModified.emit(self.tag_image)
+	#
+	# 	return True
+
 	def rowCount(self, index: QModelIndex):
 		if self.tag_image is None:
 			return 0
@@ -67,7 +133,6 @@ class ImageTagModel(QAbstractListModel):
 
 	def setData(self, index, value, role=...):
 		return super().setData(index, value, role)
-
 
 # class ImageTagModel2(QAbstractItemModel):
 # 	def __init__(self, tag_image: TagImage | None = None, view_mode: str = "flat"):

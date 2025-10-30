@@ -6,6 +6,7 @@ from src.tag_image import TagImage
 from src.tag_image_directory import TagImageDirectory
 
 
+
 class TagImageListModel(QAbstractListModel):
 	def __init__(self, tag_image_directory: TagImageDirectory | None = None):
 		super().__init__()
@@ -17,6 +18,7 @@ class TagImageListModel(QAbstractListModel):
 
 	def data(self, index: QModelIndex, role: int):
 		tag_image = self.tag_image_directory.tag_images[index.row()]
+		condition = lambda v: v if tag_image.modified else None
 		match role:
 			case Qt.ItemDataRole.BackgroundRole:
 				return self.changed_background if tag_image.modified else None
@@ -32,7 +34,7 @@ class TagImageListModel(QAbstractListModel):
 				return None
 
 	def rowCount(self, index: QModelIndex):
-		return len(self.tag_image_directory.tag_images)
+		return len(self.tag_image_directory.tag_images) if self.tag_image_directory else 0
 
 	def tagsModified(self, item: TagImage):
 		"""
@@ -45,3 +47,4 @@ class TagImageListModel(QAbstractListModel):
 
 	def setDirectory(self, tag_image_directory: TagImageDirectory):
 		self.tag_image_directory = tag_image_directory
+

@@ -9,7 +9,7 @@ class TagImage:
 		self.path = path
 		self._thumbnail: QIcon | None = None
 		self.thumb_size: int = 0
-		self._tags: list[str] | None = None
+		self._tags: list[str] | None = None # don't hold external references to _tags
 		self.modified: bool = False
 		self.m_time: float = time.monotonic()
 
@@ -48,10 +48,20 @@ class TagImage:
 
 		return self._tags
 
-	def add_tag(self, tag: str):
-		if tag not in self._tags:
-			self._tags.append(tag)
-			self.modified = True
+	def insert_tag(self, tag: str, index: int):
+		self._tags.insert(index, tag)
+		self.modified = True
+
+	def remove_tag(self, tag: str):
+		""" Removes **all** instances of ``tag``.
+		"""
+		# Create new list without removed tag
+		self._tags = [s for s in self._tags if s != tag]
+		self.modified = True
+
+	def remove_tag_at(self, index: int):
+		del self._tags[index]
+		self.modified = True
 
 	@property
 	def thumbnail(self):

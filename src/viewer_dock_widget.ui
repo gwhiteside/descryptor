@@ -110,12 +110,12 @@
    <extends>QGraphicsView</extends>
    <header>src/graphics_view</header>
   </customwidget>
-   <customwidget>
-    <class>FloatDockWidget</class>
-    <extends>QDockWidget</extends>
-    <header>src/float_dock_widget</header>
-    <container>1</container>
-   </customwidget>
+  <customwidget>
+   <class>FloatDockWidget</class>
+   <extends>QDockWidget</extends>
+   <header>src/float_dock_widget</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
  <resources/>
  <connections/>

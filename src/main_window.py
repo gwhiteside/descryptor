@@ -1,7 +1,5 @@
-from pathlib import Path
-
-from PyQt6.QtCore import QItemSelectionRange, Qt, QStringListModel, QSize, pyqtSignal
-from PyQt6.QtGui import QPixmap, QPainter, QIcon, QStandardItem, QStandardItemModel
+from PyQt6.QtCore import QItemSelectionRange, Qt, QSize, pyqtSignal
+from PyQt6.QtGui import QPixmap, QPainter, QShortcut, QKeySequence
 from PyQt6.QtWidgets import (
 	QMainWindow, QGraphicsScene,
 	QFileDialog, QMessageBox, QListView, QDockWidget, QLineEdit
@@ -12,10 +10,11 @@ from src.directory_tag_model import DirectoryTagModel
 from src.float_dock_widget import FloatDockWidget
 from src.graphics_view import GraphicsView
 from src.image_tag_model import ImageTagModel
-from src.styled_item_delegate import StyledItemDelegate
 from src.tag_image import TagImage
 from src.tag_image_directory import TagImageDirectory
 from src.tag_image_list_model import TagImageListModel
+
+debug_path = "***REMOVED***"
 
 
 class MainWindow(QMainWindow):
@@ -84,32 +83,48 @@ class MainWindow(QMainWindow):
 		self.viewerGraphicsView.setScene(self.scene)
 		self.viewerGraphicsView.setRenderHint(QPainter.RenderHint.Antialiasing)
 
+		# Create keyboard shortcuts
+
+		self.actionOpen.setShortcut(QKeySequence.StandardKey.Open)
+		self.actionQuit.setShortcut(QKeySequence.StandardKey.Quit)
+		self.delete_shortcut = QShortcut(QKeySequence.StandardKey.Delete, self.imgtagListView)
+
+
 		# Connect signals
-		#self.actionExit.triggered.connect(self.close)
-		#self.actionOpen.triggered.connect(self.open_directory)
+		self.actionOpen.triggered.connect(self.open_directory)
+		self.actionQuit.triggered.connect(self.close)
+		self.delete_shortcut.activated.connect(self.delete_selected_item)
 		self.image_loaded.connect(self.directory_tag_model.on_image_loaded)
 		self.selectorListView.selectionModel().selectionChanged.connect(self.display_image)
 		self.imgtagListViewModel.tagsModified.connect(self.tag_image_list_model.tagsModified)
 		self.imgtagLineEdit.returnPressed.connect(self.add_tag)
 
 		# Auto load image directory for testing
-		#self.open_directory("./images")
-		self.open_directory("***REMOVED***")
+		self.open_directory()
 
 	def add_tag(self):
 		editor = self.imgtagLineEdit
-		model = self.tag_image_list_model
 		text = editor.text().strip()
-		#model.beginI
-		#self.current_tag_image.add_tag(text)
-		self.imgtagListViewModel.appendTag(text)
-		#model.layoutChanged.emit()
+		if not text:
+			return
+		self.imgtagListViewModel.insert_tag(text)
 		editor.clear()
 
-	def open_directory(self, path: str | None = None):
+	def delete_selected_item(self):
+		indexes = self.imgtagListView.selectedIndexes()
+		if indexes:
+			index = indexes[0]
+			row = index.row()
+			self.imgtagListViewModel.remove_tag_at(row)
+
+		# TODO selector and directory tags need to be informed of updates
+
+	def open_directory(self):
 		"""Open directory dialog and load images"""
 
-		if path is None:
+		if debug_path:
+			path = debug_path
+		else:
 			path = QFileDialog.getExistingDirectory(
 				self,
 				"Select Directory",
@@ -117,8 +132,9 @@ class MainWindow(QMainWindow):
 				QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks
 			)
 
-			if not path:
-				return
+		if not path:
+			# TODO display error message
+			return
 
 		directory = TagImageDirectory(path)
 
@@ -147,7 +163,7 @@ class MainWindow(QMainWindow):
 		self.current_tag_image = tag_image
 		self.image_loaded.emit(tag_image)
 
-		self.imgtagListViewModel.setTagImage(tag_image)
+		self.imgtagListViewModel.set_tag_image(tag_image)
 		self.imgtagsDockWidget.setWindowTitle("Image Tags ({})".format(len(tag_image.tags)))
 
 		path = str(tag_image.path)
