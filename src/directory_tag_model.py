@@ -4,16 +4,16 @@ from PyQt6.QtCore import QAbstractItemModel, QAbstractListModel, QModelIndex, Qt
 from PyQt6.QtGui import QColor, QFont
 
 from src.image_tag_model import ImageTagModel
-from src.tag_image import TagImage
-from src.tag_image_directory import TagImageDirectory
+from src.image import Image
+from src.directory import Directory
 
 
 class DirectoryTagModel(QAbstractListModel):
-	def __init__(self, directory: TagImageDirectory | None = None):
+	def __init__(self, directory: Directory | None = None):
 		super().__init__()
 		self.directory = None
-		self.current_image: TagImage | None = None
-		self.tag_map: dict[str, list[TagImage]] = {} # inverted index of tags to TagImages
+		self.current_image: Image | None = None
+		self.tag_map: dict[str, list[Image]] = {} # inverted index of tags to TagImages
 		self.__view_cache: list[str] = [] # cached sorted tags (with values) from tag_map
 		self.load(directory)
 
@@ -49,7 +49,7 @@ class DirectoryTagModel(QAbstractListModel):
 		# 	image.tags.remove(tag)
 		# 	image.modified = True
 
-		t: list[TagImage] = self.tag_map[tag]
+		t: list[Image] = self.tag_map[tag]
 
 
 		# match role:
@@ -74,17 +74,17 @@ class DirectoryTagModel(QAbstractListModel):
 		# 	case _:
 		# 		return None
 
-	def load(self, directory: TagImageDirectory):
+	def load(self, directory: Directory):
 		if directory is None:
 			return
 		self.directory = directory
 		self._build_tag_map()
 
-	def on_image_loaded(self, image: TagImage):
+	def on_image_loaded(self, image: Image):
 		self.current_image = image
 		self.dataChanged.emit(QModelIndex(), QModelIndex(), [Qt.ItemDataRole.ForegroundRole])
 
-	def on_image_tags_modified(self, image: TagImage, old_tags: set[str], new_tags: set[str]):
+	def on_image_tags_modified(self, image: Image, old_tags: set[str], new_tags: set[str]):
 		added = new_tags - old_tags
 		removed = old_tags - new_tags
 
@@ -103,8 +103,8 @@ class DirectoryTagModel(QAbstractListModel):
 
 	def on_tag_removed(self, tag: str):
 		image_tag_model: ImageTagModel = self.sender()
-		tag_images: list[TagImage] = self.tag_map[tag]
-		tag_images.remove(image_tag_model.tag_image)
+		images: list[Image] = self.tag_map[tag]
+		images.remove(image_tag_model.image)
 		self.dataChanged.emit(self.createIndex(0, 0), self.createIndex(0, 0), [Qt.ItemDataRole.DisplayRole])
 
 	def remove_tag(self, tag: str):
@@ -131,7 +131,7 @@ class DirectoryTagModel(QAbstractListModel):
 			return
 
 		self.tag_map.clear()
-		for image in self.directory.tag_images:
+		for image in self.directory.images:
 			for tag in image.tags:
 				self.tag_map.setdefault(tag, []).append(image)
 

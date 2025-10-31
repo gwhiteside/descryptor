@@ -3,7 +3,7 @@ from PyQt6.QtCore import Qt, QModelIndex
 from PyQt6.QtGui import QPainter, QColor, QBrush
 from PyQt6.QtWidgets import QStyledItemDelegate, QStyleOptionViewItem
 
-from src.tag_image import TagImage
+from src.image import Image
 
 
 class StyledItemDelegate(QStyledItemDelegate):

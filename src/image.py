@@ -4,7 +4,7 @@ from pathlib import Path
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap, QIcon
 
-class TagImage:
+class Image:
 	def __init__(self, path: Path):
 		self.path = path
 		self._thumbnail: QIcon | None = None

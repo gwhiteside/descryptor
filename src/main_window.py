@@ -10,25 +10,25 @@ from src.directory_tag_model import DirectoryTagModel
 from src.float_dock_widget import FloatDockWidget
 from src.graphics_view import GraphicsView
 from src.image_tag_model import ImageTagModel
-from src.tag_image import TagImage
-from src.tag_image_directory import TagImageDirectory
-from src.tag_image_list_model import TagImageListModel
+from src.image import Image
+from src.directory import Directory
+from src.directory_image_model import DirectoryImageModel
 
 debug_path = "***REMOVED***"
 
 
 class MainWindow(QMainWindow):
-	image_loaded = pyqtSignal(TagImage)
+	image_loaded = pyqtSignal(Image)
 
 	def __init__(self):
 		super().__init__()
 
 		# Instance variables
 		self.current_selector_index = None
-		self.current_tag_image: TagImage | None = None
+		self.current_tag_image: Image | None = None
 		#self.directory_tags_set: set = set()
 		#self.tag_image_directory = TagImageDirectory()
-		self.tag_image_list_model = TagImageListModel()
+		self.directory_image_model = DirectoryImageModel()
 		self.directory_tag_model = DirectoryTagModel()
 
 		# Load interface
@@ -62,7 +62,7 @@ class MainWindow(QMainWindow):
 
 		# Set up selector list view model
 		#self.selectorListViewModel = QStandardItemModel()
-		self.selectorListView.setModel(self.tag_image_list_model)
+		self.selectorListView.setModel(self.directory_image_model)
 		self.selectorListView.setIconSize(QSize(128, 128))
 		self.selectorListView.setSpacing(8)
 		self.selectorListView.setViewMode(QListView.ViewMode.IconMode)
@@ -70,8 +70,8 @@ class MainWindow(QMainWindow):
 		self.selectorListView.setUniformItemSizes(True)
 
 		# Set up image tags list view model
-		self.imgtagListViewModel = ImageTagModel()
-		self.imgtagListView.setModel(self.imgtagListViewModel)
+		self.image_tag_model = ImageTagModel()
+		self.imgtagListView.setModel(self.image_tag_model)
 		#self.imgtagListView.setItemDelegate(StyledItemDelegate())
 
 		# Set up directory tags list view model
@@ -96,8 +96,8 @@ class MainWindow(QMainWindow):
 		self.delete_shortcut.activated.connect(self.delete_selected_item)
 		self.image_loaded.connect(self.directory_tag_model.on_image_loaded)
 		self.selectorListView.selectionModel().selectionChanged.connect(self.display_image)
-		self.imgtagListViewModel.tagsModified.connect(self.tag_image_list_model.tagsModified)
-		self.imgtagListViewModel.tagRemoved.connect(self.directory_tag_model.on_tag_removed)
+		self.image_tag_model.tagsModified.connect(self.directory_image_model.tagsModified)
+		self.image_tag_model.tagRemoved.connect(self.directory_tag_model.on_tag_removed)
 		self.imgtagLineEdit.returnPressed.connect(self.add_tag)
 
 		# Auto load image directory for testing
@@ -108,7 +108,7 @@ class MainWindow(QMainWindow):
 		text = editor.text().strip()
 		if not text:
 			return
-		self.imgtagListViewModel.insert_tag(text)
+		self.image_tag_model.insert_tag(text)
 		editor.clear()
 
 	def delete_selected_item(self):
@@ -116,9 +116,41 @@ class MainWindow(QMainWindow):
 		if indexes:
 			index = indexes[0]
 			row = index.row()
-			self.imgtagListViewModel.remove_tag_at(row)
+			self.image_tag_model.remove_tag_at(row)
 
 		# TODO selector and directory tags need to be informed of updates
+
+	def display_image(self, selected_items: QItemSelectionRange, deselected_items):
+		"""Display selected image in graphics view"""
+
+		if not selected_items:
+			return
+
+		index = selected_items.indexes()[0]  # Take the first selected item
+
+		tag_image: Image = self.directory_image_model.data(index, Qt.ItemDataRole.UserRole)
+
+		self.current_tag_image = tag_image
+		self.image_loaded.emit(tag_image)
+
+		self.image_tag_model.set_image(tag_image)
+		self.imgtagsDockWidget.setWindowTitle("Image Tags ({})".format(len(tag_image.tags)))
+
+		path = str(tag_image.path)
+
+		try:
+			pixmap = QPixmap(path)
+			if pixmap.isNull():
+				raise Exception("Failed to load image")
+
+			# Clear previous scene and add new image
+			self.scene.clear()
+			self.scene.addPixmap(pixmap)
+
+			self.viewerGraphicsView.fitInView(self.scene.itemsBoundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
+
+		except Exception as e:
+			QMessageBox.critical(self, "Error", f"Failed to display image: {str(e)}")
 
 	def open_directory(self):
 		"""Open directory dialog and load images"""
@@ -137,10 +169,10 @@ class MainWindow(QMainWindow):
 			# TODO display error message
 			return
 
-		directory = TagImageDirectory(path)
+		directory = Directory(path)
 
 		try:
-			self.tag_image_list_model.setDirectory(directory)
+			self.directory_image_model.setDirectory(directory)
 			self.directory_tag_model.load(directory)
 			#self.dirtagsListViewModel.setStringList(self.directory_tags_set)
 
@@ -151,36 +183,6 @@ class MainWindow(QMainWindow):
 		except Exception as e:
 			QMessageBox.critical(self, "Error", f"Failed to load directory: {str(e)}")
 
-	def display_image(self, selected_items: QItemSelectionRange, deselected_items):
-		"""Display selected image in graphics view"""
 
-		if not selected_items:
-			return
-
-		index = selected_items.indexes()[0]  # Take the first selected item
-
-		tag_image: TagImage = self.tag_image_list_model.data(index, Qt.ItemDataRole.UserRole)
-
-		self.current_tag_image = tag_image
-		self.image_loaded.emit(tag_image)
-
-		self.imgtagListViewModel.set_tag_image(tag_image)
-		self.imgtagsDockWidget.setWindowTitle("Image Tags ({})".format(len(tag_image.tags)))
-
-		path = str(tag_image.path)
-
-		try:
-			pixmap = QPixmap(path)
-			if pixmap.isNull():
-				raise Exception("Failed to load image")
-
-			# Clear previous scene and add new image
-			self.scene.clear()
-			self.scene.addPixmap(pixmap)
-
-			self.viewerGraphicsView.fitInView(self.scene.itemsBoundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
-
-		except Exception as e:
-			QMessageBox.critical(self, "Error", f"Failed to display image: {str(e)}")
 
 
