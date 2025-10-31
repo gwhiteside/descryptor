@@ -33,9 +33,9 @@ class ImageTagModel(QAbstractListModel):
 		""" Removes **all** instances of ``tag``.
 		"""
 		# Rebuilds whole layout, but simpler than calculating
-		self.layoutAboutToBeChanged()
+		self.layoutAboutToBeChanged.emit()
 		self.image.remove_tag(tag)
-		self.layoutChanged()
+		self.layoutChanged.emit()
 		self.tagsModified.emit(self.image)
 		# # doesn't require rebuilding the whole layout
 		# indices = sorted(i for i, s in enumerate(self.tag_image.tags) if s == tag)

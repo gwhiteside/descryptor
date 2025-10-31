@@ -29,5 +29,7 @@ class Directory:
 		self.images = images
 
 	def save(self):
-		pass
+		for image in self.images:
+			if image.is_modified():
+				image.save_tags()
 

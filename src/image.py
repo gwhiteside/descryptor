@@ -1,3 +1,4 @@
+import csv
 import time
 from pathlib import Path
 
@@ -67,6 +68,12 @@ class Image:
 		del self._tags[index]
 		self.set_modified()
 		return tag
+
+	def save_tags(self):
+		tag_path = self.path.with_suffix(".txt")
+		with open(tag_path, "w", newline="") as file:
+			writer = csv.writer(file)
+			writer.writerow(self.tags)
 
 	def set_modified(self):
 		"""Marks object as modified and records the time for sorting."""

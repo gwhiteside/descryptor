@@ -77,8 +77,11 @@ class DirectoryTagModel(QAbstractListModel):
 	def load(self, directory: Directory):
 		if directory is None:
 			return
+
+		self.layoutAboutToBeChanged.emit()
 		self.directory = directory
 		self._build_tag_map()
+		self.layoutChanged.emit()
 
 	def on_image_loaded(self, image: Image):
 		self.current_image = image

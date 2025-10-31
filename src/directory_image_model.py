@@ -45,6 +45,10 @@ class DirectoryImageModel(QAbstractListModel):
 		index = self.index(row)
 		self.dataChanged.emit(index, index)
 
-	def setDirectory(self, directory: Directory):
-		self.directory = directory
+	def save(self):
+		self.directory.save()
 
+	def setDirectory(self, directory: Directory):
+		self.layoutAboutToBeChanged.emit()
+		self.directory = directory
+		self.layoutChanged.emit()

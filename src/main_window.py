@@ -87,6 +87,7 @@ class MainWindow(QMainWindow):
 
 		self.actionOpen.setShortcut(QKeySequence.StandardKey.Open)
 		self.actionQuit.setShortcut(QKeySequence.StandardKey.Quit)
+		self.actionSave.setShortcut(QKeySequence.StandardKey.Save)
 		self.delete_shortcut = QShortcut(QKeySequence.StandardKey.Delete, self.imgtagListView)
 		self.next_image_shortcut = QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_N), self)
 		self.prev_image_shortcut = QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_P), self)
@@ -94,6 +95,7 @@ class MainWindow(QMainWindow):
 		# Connect signals
 		self.actionOpen.triggered.connect(self.open_directory)
 		self.actionQuit.triggered.connect(self.close)
+		self.actionSave.triggered.connect(self.save)
 		self.delete_shortcut.activated.connect(self.delete_selected_item)
 		self.next_image_shortcut.activated.connect(self.select_next_image)
 		self.prev_image_shortcut.activated.connect(self.select_prev_image)
@@ -102,6 +104,8 @@ class MainWindow(QMainWindow):
 		self.image_tag_model.tagsModified.connect(self.directory_image_model.tagsModified)
 		self.image_tag_model.tagRemoved.connect(self.directory_tag_model.on_tag_removed)
 		self.imgtagLineEdit.returnPressed.connect(self.add_tag)
+
+		self.imgtagLineEdit.setEnabled(False) # enabled once something is loaded
 
 		# Auto load image directory for testing
 		self.open_directory()
@@ -157,7 +161,7 @@ class MainWindow(QMainWindow):
 
 	def open_directory(self):
 		"""Open directory dialog and load images"""
-
+		debug_path = None
 		if debug_path:
 			path = debug_path
 		else:
@@ -177,6 +181,7 @@ class MainWindow(QMainWindow):
 		try:
 			self.directory_image_model.setDirectory(directory)
 			self.directory_tag_model.load(directory)
+			self.imgtagLineEdit.setEnabled(True)
 			#self.dirtagsListViewModel.setStringList(self.directory_tags_set)
 
 			#self.dirtagsDockWidget.setWindowTitle("Directory Tags ({})".format(len(self.directory_tags_set)))
@@ -185,6 +190,9 @@ class MainWindow(QMainWindow):
 
 		except Exception as e:
 			QMessageBox.critical(self, "Error", f"Failed to load directory: {str(e)}")
+
+	def save(self):
+		self.directory_image_model.save()
 
 	def select_next_image(self):
 		view = self.selectorListView
