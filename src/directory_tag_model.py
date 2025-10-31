@@ -3,6 +3,7 @@ from collections import Counter
 from PyQt6.QtCore import QAbstractItemModel, QAbstractListModel, QModelIndex, Qt
 from PyQt6.QtGui import QColor, QFont
 
+from src.image_tag_model import ImageTagModel
 from src.tag_image import TagImage
 from src.tag_image_directory import TagImageDirectory
 
@@ -40,7 +41,15 @@ class DirectoryTagModel(QAbstractListModel):
 
 		return None
 
+	def decrement_tag(self, tag: str):
+		# images = self.tag_map.pop(tag, None)
+		# if not images:
+		# 	return
+		# for image in images:
+		# 	image.tags.remove(tag)
+		# 	image.modified = True
 
+		t: list[TagImage] = self.tag_map[tag]
 
 
 		# match role:
@@ -92,7 +101,14 @@ class DirectoryTagModel(QAbstractListModel):
 		# could optimize a bit, but rebuilding the whole mostly-sorted cache is fine
 		self._build_tag_cache()
 
+	def on_tag_removed(self, tag: str):
+		image_tag_model: ImageTagModel = self.sender()
+		tag_images: list[TagImage] = self.tag_map[tag]
+		tag_images.remove(image_tag_model.tag_image)
+		self.dataChanged.emit(self.createIndex(0, 0), self.createIndex(0, 0), [Qt.ItemDataRole.DisplayRole])
+
 	def remove_tag(self, tag: str):
+		"""Removes all instances of ``tag`` from all ``TagImage`` instances."""
 		images = self.tag_map.pop(tag, None)
 		if not images:
 			return

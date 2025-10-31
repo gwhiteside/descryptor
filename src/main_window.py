@@ -97,6 +97,7 @@ class MainWindow(QMainWindow):
 		self.image_loaded.connect(self.directory_tag_model.on_image_loaded)
 		self.selectorListView.selectionModel().selectionChanged.connect(self.display_image)
 		self.imgtagListViewModel.tagsModified.connect(self.tag_image_list_model.tagsModified)
+		self.imgtagListViewModel.tagRemoved.connect(self.directory_tag_model.on_tag_removed)
 		self.imgtagLineEdit.returnPressed.connect(self.add_tag)
 
 		# Auto load image directory for testing

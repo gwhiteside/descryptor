@@ -59,9 +59,11 @@ class TagImage:
 		self._tags = [s for s in self._tags if s != tag]
 		self.modified = True
 
-	def remove_tag_at(self, index: int):
+	def remove_tag_at(self, index: int) -> str:
+		tag: str = self._tags[index]
 		del self._tags[index]
 		self.modified = True
+		return tag
 
 	@property
 	def thumbnail(self):

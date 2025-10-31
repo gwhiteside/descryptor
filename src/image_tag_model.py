@@ -7,6 +7,7 @@ from src.tag_image import TagImage
 
 class ImageTagModel(QAbstractListModel):
 	tagsModified = pyqtSignal(TagImage)
+	tagRemoved = pyqtSignal(str)
 
 	# name data loader set_data_source
 
@@ -59,9 +60,10 @@ class ImageTagModel(QAbstractListModel):
 
 	def remove_tag_at(self, index: int):
 		self.beginRemoveRows(QModelIndex(), index, index)
-		self.tag_image.remove_tag_at(index)
+		removed_tag = self.tag_image.remove_tag_at(index)
 		self.endRemoveRows()
 		self.tagsModified.emit(self.tag_image)
+		self.tagRemoved.emit(removed_tag)
 
 	def set_tag_image(self, tag_image: TagImage):
 		self.beginResetModel()
