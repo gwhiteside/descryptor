@@ -33,7 +33,7 @@ class DirectoryImageModel(QAbstractListModel):
 			case _:
 				return None
 
-	def rowCount(self, index: QModelIndex):
+	def rowCount(self, parent: QModelIndex = QModelIndex()):
 		return len(self.directory.images) if self.directory else 0
 
 	def tagsModified(self, item: Image):

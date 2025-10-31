@@ -88,12 +88,15 @@ class MainWindow(QMainWindow):
 		self.actionOpen.setShortcut(QKeySequence.StandardKey.Open)
 		self.actionQuit.setShortcut(QKeySequence.StandardKey.Quit)
 		self.delete_shortcut = QShortcut(QKeySequence.StandardKey.Delete, self.imgtagListView)
-
+		self.next_image_shortcut = QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_N), self)
+		self.prev_image_shortcut = QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_P), self)
 
 		# Connect signals
 		self.actionOpen.triggered.connect(self.open_directory)
 		self.actionQuit.triggered.connect(self.close)
 		self.delete_shortcut.activated.connect(self.delete_selected_item)
+		self.next_image_shortcut.activated.connect(self.select_next_image)
+		self.prev_image_shortcut.activated.connect(self.select_prev_image)
 		self.image_loaded.connect(self.directory_tag_model.on_image_loaded)
 		self.selectorListView.selectionModel().selectionChanged.connect(self.display_image)
 		self.image_tag_model.tagsModified.connect(self.directory_image_model.tagsModified)
@@ -183,6 +186,20 @@ class MainWindow(QMainWindow):
 		except Exception as e:
 			QMessageBox.critical(self, "Error", f"Failed to load directory: {str(e)}")
 
+	def select_next_image(self):
+		view = self.selectorListView
+		model = view.model()
+		current_index = view.currentIndex()
+		if current_index.isValid() and current_index.row() < model.rowCount() - 1:
+			next_index = model.index(current_index.row() + 1, 0)
+			view.setCurrentIndex(next_index)
 
+	def select_prev_image(self):
+		view = self.selectorListView
+		model = view.model()
+		current_index = view.currentIndex()
+		if current_index.isValid() and current_index.row() > 0:
+			prev_index = model.index(current_index.row() - 1, 0)
+			view.setCurrentIndex(prev_index)
 
 
