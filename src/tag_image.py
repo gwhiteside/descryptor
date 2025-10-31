@@ -10,8 +10,8 @@ class TagImage:
 		self._thumbnail: QIcon | None = None
 		self.thumb_size: int = 0
 		self._tags: list[str] | None = None # don't hold external references to _tags
-		self.modified: bool = False
-		self.m_time: float = time.monotonic()
+		self._modified: bool = False
+		self._m_time: float = time.monotonic()
 
 	def __lt__(self, other):
 		return self.path < other.path
@@ -50,20 +50,28 @@ class TagImage:
 
 	def insert_tag(self, tag: str, index: int):
 		self._tags.insert(index, tag)
-		self.modified = True
+		self.set_modified()
+
+	def is_modified(self) -> bool:
+		return self._modified
 
 	def remove_tag(self, tag: str):
 		""" Removes **all** instances of ``tag``.
 		"""
 		# Create new list without removed tag
 		self._tags = [s for s in self._tags if s != tag]
-		self.modified = True
+		self.set_modified()
 
 	def remove_tag_at(self, index: int) -> str:
 		tag: str = self._tags[index]
 		del self._tags[index]
-		self.modified = True
+		self.set_modified()
 		return tag
+
+	def set_modified(self):
+		"""Marks object as modified and records the time for sorting."""
+		self._modified = True
+		self._m_time = time.monotonic()
 
 	@property
 	def thumbnail(self):

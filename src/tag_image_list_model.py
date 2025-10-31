@@ -17,17 +17,17 @@ class TagImageListModel(QAbstractListModel):
 		self.setDirectory(tag_image_directory)
 
 	def data(self, index: QModelIndex, role: int):
-		tag_image = self.tag_image_directory.tag_images[index.row()]
-		condition = lambda v: v if tag_image.modified else None
+		tag_image: TagImage = self.tag_image_directory.tag_images[index.row()]
+
 		match role:
 			case Qt.ItemDataRole.BackgroundRole:
-				return self.changed_background if tag_image.modified else None
+				return self.changed_background if tag_image.is_modified() else None
 			case Qt.ItemDataRole.DecorationRole:
 				return tag_image.thumbnail
 			case Qt.ItemDataRole.DisplayRole:
 				return tag_image.path.name
 			case Qt.ItemDataRole.FontRole:
-				return self.changed_font if tag_image.modified else None
+				return self.changed_font if tag_image.is_modified() else None
 			case Qt.ItemDataRole.UserRole:
 				return tag_image
 			case _:

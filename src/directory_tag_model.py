@@ -113,9 +113,7 @@ class DirectoryTagModel(QAbstractListModel):
 		if not images:
 			return
 		for image in images:
-			image.tags.remove(tag)
-			image.modified = True
-			# TODO could more robustly check if this leaves data in modified state
+			image.remove_tag(tag)
 			# TODO data should inform their views of change here
 		# TODO inform this model's views of data change
 

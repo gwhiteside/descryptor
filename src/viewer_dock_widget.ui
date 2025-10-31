@@ -49,7 +49,7 @@
           </sizepolicy>
          </property>
          <property name="text">
-          <string>src/image001_b.png</string>
+          <string>img</string>
          </property>
          <property name="textFormat">
           <enum>Qt::TextFormat::PlainText</enum>
