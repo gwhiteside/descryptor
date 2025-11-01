@@ -1,5 +1,5 @@
 from PyQt6.QtCore import QItemSelectionRange, Qt, QSize, pyqtSignal
-from PyQt6.QtGui import QPixmap, QPainter, QShortcut, QKeySequence
+from PyQt6.QtGui import QPainter, QShortcut, QKeySequence
 from PyQt6.QtWidgets import (
 	QMainWindow, QGraphicsScene,
 	QFileDialog, QMessageBox, QListView, QDockWidget, QLineEdit
@@ -13,8 +13,6 @@ from src.image_tag_model import ImageTagModel
 from src.image import Image
 from src.directory import Directory
 from src.directory_image_model import DirectoryImageModel
-
-debug_path = "***REMOVED***"
 
 
 class MainWindow(QMainWindow):
@@ -142,16 +140,13 @@ class MainWindow(QMainWindow):
 
 	def open_directory(self):
 		"""Open directory dialog and load images"""
-		debug_path = None
-		if debug_path:
-			path = debug_path
-		else:
-			path = QFileDialog.getExistingDirectory(
-				self,
-				"Select Directory",
-				"",
-				QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks
-			)
+
+		path = QFileDialog.getExistingDirectory(
+			self,
+			"Select Directory",
+			"",
+			QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks
+		)
 
 		if not path:
 			# TODO display error message
@@ -184,5 +179,3 @@ class MainWindow(QMainWindow):
 		if current_index.isValid() and current_index.row() > 0:
 			prev_index = model.index(current_index.row() - 1, 0)
 			view.setCurrentIndex(prev_index)
-
-
