@@ -2,6 +2,7 @@ import csv
 import time
 from pathlib import Path
 
+from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QIcon, QImage, QPixmap
 
 
@@ -10,6 +11,7 @@ class Image:
 		self.path = path
 		self._thumbnail: QIcon | QImage | None = None
 		self.thumb_size: int = 0
+		self.size: QSize | None = None
 		self._tags: list[str] | None = None # don't hold external references to _tags
 		self._modified: bool = False
 		self._mtime: float = time.monotonic()

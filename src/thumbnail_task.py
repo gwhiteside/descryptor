@@ -20,6 +20,7 @@ class ThumbnailTask(QRunnable):
 		# QPixmap uses the GUI thread, so load and scale with QImage
 		qimage = QImage(str(self.image.path))
 		if not qimage.isNull():
+			self.image.size = qimage.size()
 			qimage = qimage.scaled(
 				200,  # self.size,  # width
 				200,  # self.size,  # height

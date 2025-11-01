@@ -24,10 +24,6 @@ class MainWindow(QMainWindow):
 		super().__init__()
 
 		# Instance variables
-		self.current_selector_index = None
-		self.current_tag_image: Image | None = None
-		#self.directory_tags_set: set = set()
-		#self.tag_image_directory = TagImageDirectory()
 		self.directory_image_model = DirectoryImageModel()
 		self.directory_tag_model = DirectoryTagModel()
 
@@ -136,30 +132,13 @@ class MainWindow(QMainWindow):
 
 		index = selected_items.indexes()[0]  # Take the first selected item
 
-		tag_image: Image = self.directory_image_model.data(index, Qt.ItemDataRole.UserRole)
+		image: Image = self.directory_image_model.data(index, Qt.ItemDataRole.UserRole)
 
-		self.current_tag_image = tag_image
-		self.image_loaded.emit(tag_image)
+		self.image_tag_model.set_image(image)
+		self.imgtagsDockWidget.setWindowTitle("Image Tags ({})".format(len(image.tags)))
+		self.viewerGraphicsView.load_image(image)
 
-		self.image_tag_model.set_image(tag_image)
-		self.imgtagsDockWidget.setWindowTitle("Image Tags ({})".format(len(tag_image.tags)))
-
-		path = str(tag_image.path)
-
-		try:
-			pixmap = QPixmap(path)
-			if pixmap.isNull():
-				raise Exception("Failed to load image")
-
-			# Clear previous scene and add new image
-			self.scene.clear()
-			self.scene.addPixmap(pixmap)
-			self.viewerGraphicsView.current_zoom = 1.0
-			self.viewerGraphicsView.setSceneRect(0, 0, pixmap.width(), pixmap.height())
-			self.viewerGraphicsView.fitInView(self.scene.itemsBoundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
-
-		except Exception as e:
-			QMessageBox.critical(self, "Error", f"Failed to display image: {str(e)}")
+		self.image_loaded.emit(image)
 
 	def open_directory(self):
 		"""Open directory dialog and load images"""
