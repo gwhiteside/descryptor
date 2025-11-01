@@ -2,39 +2,27 @@ import csv
 import time
 from pathlib import Path
 
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap, QIcon
+from PyQt6.QtGui import QIcon, QImage, QPixmap
+
 
 class Image:
 	def __init__(self, path: Path):
 		self.path = path
-		self._thumbnail: QIcon | None = None
+		self._thumbnail: QIcon | QImage | None = None
 		self.thumb_size: int = 0
 		self._tags: list[str] | None = None # don't hold external references to _tags
 		self._modified: bool = False
-		self._m_time: float = time.monotonic()
+		self._mtime: float = time.monotonic()
 
 	def __lt__(self, other):
 		return self.path < other.path
 
-	def load_thumbnail(self, size: int = 200) -> QIcon:
-		if self._thumbnail is not None and self.thumb_size == size:
-			return self._thumbnail
+	def insert_tag(self, tag: str, index: int):
+		self._tags.insert(index, tag)
+		self.set_modified()
 
-		pixmap = QPixmap(str(self.path))
-		if pixmap.isNull():
-			self._thumbnail = QIcon()
-		else:
-			thumbnail = pixmap.scaled(
-				size, # width
-				size, # height
-				Qt.AspectRatioMode.KeepAspectRatio, # aspectRatioMode
-				Qt.TransformationMode.SmoothTransformation # transformMode
-			)
-			self._thumbnail = QIcon(thumbnail)
-			self.thumb_size = size
-
-		return self._thumbnail
+	def is_modified(self) -> bool:
+		return self._modified
 
 	def load_tags(self) -> list[str]:
 		if self._tags is not None:
@@ -48,13 +36,6 @@ class Image:
 			self._tags = []
 
 		return self._tags
-
-	def insert_tag(self, tag: str, index: int):
-		self._tags.insert(index, tag)
-		self.set_modified()
-
-	def is_modified(self) -> bool:
-		return self._modified
 
 	def remove_tag(self, tag: str):
 		""" Removes **all** instances of ``tag``.
@@ -75,15 +56,21 @@ class Image:
 			writer = csv.writer(file)
 			writer.writerow(self.tags)
 
-	def set_modified(self):
+	def set_modified(self, is_modified: bool = True):
 		"""Marks object as modified and records the time for sorting."""
-		self._modified = True
-		self._m_time = time.monotonic()
-
-	@property
-	def thumbnail(self):
-		return self.load_thumbnail()
+		self._modified = is_modified
+		self._mtime = time.monotonic() if is_modified else self._mtime
 
 	@property
 	def tags(self):
 		return self.load_tags()
+
+	@property
+	def thumbnail(self) -> QIcon | None:
+		if type(self._thumbnail) == QImage:
+			self._thumbnail = QIcon(QPixmap.fromImage(self._thumbnail))
+		return self._thumbnail
+
+	@thumbnail.setter
+	def thumbnail(self, value: QIcon | QImage | None):
+		self._thumbnail = value

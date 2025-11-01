@@ -64,6 +64,7 @@ class MainWindow(QMainWindow):
 		#self.selectorListViewModel = QStandardItemModel()
 		self.selectorListView.setModel(self.directory_image_model)
 		self.selectorListView.setIconSize(QSize(128, 128))
+		self.selectorListView.setGridSize(QSize(150,150))
 		self.selectorListView.setSpacing(8)
 		self.selectorListView.setViewMode(QListView.ViewMode.IconMode)
 		self.selectorListView.setResizeMode(QListView.ResizeMode.Adjust)
@@ -153,7 +154,8 @@ class MainWindow(QMainWindow):
 			# Clear previous scene and add new image
 			self.scene.clear()
 			self.scene.addPixmap(pixmap)
-
+			self.viewerGraphicsView.current_zoom = 1.0
+			self.viewerGraphicsView.setSceneRect(0, 0, pixmap.width(), pixmap.height())
 			self.viewerGraphicsView.fitInView(self.scene.itemsBoundingRect(), Qt.AspectRatioMode.KeepAspectRatio)
 
 		except Exception as e:
@@ -182,12 +184,6 @@ class MainWindow(QMainWindow):
 			self.directory_image_model.setDirectory(directory)
 			self.directory_tag_model.load(directory)
 			self.imgtagLineEdit.setEnabled(True)
-			#self.dirtagsListViewModel.setStringList(self.directory_tags_set)
-
-			#self.dirtagsDockWidget.setWindowTitle("Directory Tags ({})".format(len(self.directory_tags_set)))
-
-			#self.statusbarMain.showMessage(f"Loaded {len(image_paths)} images")
-
 		except Exception as e:
 			QMessageBox.critical(self, "Error", f"Failed to load directory: {str(e)}")
 
