@@ -96,8 +96,8 @@ class MainWindow(QMainWindow):
 		self.prev_image_shortcut.activated.connect(self.select_prev_image)
 		self.image_loaded.connect(self.directory_tag_model.on_image_loaded)
 		self.selectorListView.selectionModel().selectionChanged.connect(self.display_image)
-		self.image_tag_model.tagsModified.connect(self.directory_image_model.tagsModified)
-		self.image_tag_model.tagRemoved.connect(self.directory_tag_model.on_tag_removed)
+		self.image_tag_model.image_tags_modified.connect(self.directory_image_model.on_image_tags_modified)
+		self.image_tag_model.image_tags_modified.connect(self.directory_tag_model.on_image_tags_modified)
 		self.imgtagLineEdit.returnPressed.connect(self.add_tag)
 
 		self.imgtagLineEdit.setEnabled(False) # enabled once something is loaded

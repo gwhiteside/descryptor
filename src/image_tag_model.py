@@ -1,3 +1,4 @@
+from collections import Counter
 from dataclasses import dataclass, field
 
 from PyQt6.QtCore import QAbstractItemModel, QAbstractListModel, Qt, QModelIndex, pyqtSignal
@@ -6,8 +7,7 @@ from PyQt6.QtGui import QBrush, QColor
 from src.image import Image
 
 class ImageTagModel(QAbstractListModel):
-	tagsModified = pyqtSignal(Image)
-	tagRemoved = pyqtSignal(str)
+	image_tags_modified = pyqtSignal(Image, Counter, Counter)
 
 	# name data loader set_data_source
 
@@ -17,7 +17,8 @@ class ImageTagModel(QAbstractListModel):
 		self.new_tags: list[str] = []
 		self.changed_background = QBrush(QColor(128, 0, 0, 50))
 
-	def add_tag(self, tag: str):
+	def append_tag(self, tag: str):
+		"""Convenience method equivalent to ``insert_tag`` with no index."""
 		self.insert_tag(tag)
 
 	def insert_tag(self, tag: str, index: int | None = None):
@@ -59,17 +60,18 @@ class ImageTagModel(QAbstractListModel):
 		# 	self.endRemoveRows()
 
 	def remove_tag_at(self, index: int):
+		old_tags = Counter(self.image.tags)
 		self.beginRemoveRows(QModelIndex(), index, index)
-		removed_tag = self.image.remove_tag_at(index)
+		self.image.remove_tag_at(index)
 		self.endRemoveRows()
-		self.tagsModified.emit(self.image)
-		self.tagRemoved.emit(removed_tag)
+		new_tags = Counter(self.image.tags)
+		self.image_tags_modified.emit(self.image, old_tags, new_tags)
 
 	def set_image(self, image: Image):
 		self.beginResetModel()
 		self.image = image
 		self.endResetModel()
-		self.tagsModified.emit(self.image)
+		#self.tagsModified.emit(self.image)
 
 	# overrides
 
