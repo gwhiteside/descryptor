@@ -47,6 +47,10 @@ class Image:
 		self.set_modified()
 
 	def remove_tag_at(self, index: int) -> str:
+		"""Removes tag at ``index``
+		:param index: Index of tag to remove.
+		:returns: The string that was removed.
+		"""
 		tag: str = self._tags[index]
 		del self._tags[index]
 		self.set_modified()

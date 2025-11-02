@@ -54,12 +54,12 @@ class DirectoryImageModel(QAbstractListModel):
 		index = self.index(row, 0)
 		self.dataChanged.emit(index, index, [Qt.ItemDataRole.DecorationRole])
 
-	def tagsModified(self, item: Image):
+	def on_image_tags_modified(self, image: Image):
 		"""
 		Handles tag modification signal from tag editor to ensure immediate
 		updates on the selector view.
 		"""
-		row = self.directory.images.index(item)
+		row = self.directory.images.index(image)
 		index = self.index(row)
 		self.dataChanged.emit(index, index)
 
