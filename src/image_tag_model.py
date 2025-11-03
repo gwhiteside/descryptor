@@ -23,12 +23,11 @@ class ImageTagModel(QAbstractListModel):
 	def insert_tag(self, tag: str, index: int | None = None):
 		if index is None:
 			index = len(self.image.tags)
-		old_tags = Counter(self.image.tags)
+		old_tags = Counter(list(map(str, self.image.tags))) # TODO cache a list in the Image class
 		self.beginInsertRows(QModelIndex(), index, index)
 		self.image.insert_tag(tag, index)
-		self.image._new_tags.append(tag)
 		self.endInsertRows()
-		new_tags = Counter(self.image.tags)
+		new_tags = Counter(list(map(str, self.image.tags))) # TODO cache a list in the Image class
 		self.image_tags_modified.emit(self.image, old_tags, new_tags)
 
 	def remove_tag(self, tag: str):
@@ -61,11 +60,11 @@ class ImageTagModel(QAbstractListModel):
 		# 	self.endRemoveRows()
 
 	def remove_tag_at(self, index: int):
-		old_tags = Counter(self.image.tags)
+		old_tags = Counter(list(map(str, self.image.tags))) # TODO cache a list in the Image class
 		self.beginRemoveRows(QModelIndex(), index, index)
 		self.image.remove_tag_at(index)
 		self.endRemoveRows()
-		new_tags = Counter(self.image.tags)
+		new_tags = Counter(list(map(str, self.image.tags))) # TODO cache a list in the Image class
 		self.image_tags_modified.emit(self.image, old_tags, new_tags)
 
 	def set_image(self, image: Image):
@@ -76,7 +75,7 @@ class ImageTagModel(QAbstractListModel):
 
 	# overrides
 
-	def data(self, index: QModelIndex, role: int):
+	def data(self, index: QModelIndex = QModelIndex(), role: int = Qt.ItemDataRole.DisplayRole):
 		tag = self.image.tags[index.row()]
 
 		q = Qt.ItemDataRole
@@ -86,16 +85,11 @@ class ImageTagModel(QAbstractListModel):
 			# case Qt.ItemDataRole.DecorationRole:
 			# 	return tag_image.thumbnail
 			case q.DisplayRole:
-				return tag
+				return tag.text
 			case q.EditRole:
-				return tag
+				return tag.text
 			case q.ForegroundRole:
-				if tag in self.image._new_tags:
-					return QColor("red")
-				else:
-					return None
-			# case Qt.ItemDataRole.UserRole:
-			# 	return tag_image
+				return QColor("red") if tag.modified else None
 			case _:
 				return None
 

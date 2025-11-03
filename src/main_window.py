@@ -154,12 +154,12 @@ class MainWindow(QMainWindow):
 
 		directory = Directory(path)
 
-		try:
-			self.directory_image_model.setDirectory(directory)
-			self.directory_tag_model.load(directory)
-			self.imgtagLineEdit.setEnabled(True)
-		except Exception as e:
-			QMessageBox.critical(self, "Error", f"Failed to load directory: {str(e)}")
+		#try:
+		self.directory_image_model.setDirectory(directory)
+		self.directory_tag_model.load(directory)
+		self.imgtagLineEdit.setEnabled(True)
+		#except Exception as e:
+		#	QMessageBox.critical(self, "Error", f"Failed to load directory: {str(e)}")
 
 	def save(self):
 		self.directory_image_model.save()

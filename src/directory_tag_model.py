@@ -85,9 +85,9 @@ class DirectoryTagModel(QAbstractListModel):
 		if role == q.FontRole:
 			testfont = QFont()
 			testfont.setBold(True)
-			return testfont if tag in self.current_image.tags else QFont()
+			return testfont if tag in list(map(str, self.current_image.tags)) else QFont() # TODO cache a list in the Image class
 		if role == q.ForegroundRole:
-			return QColor("green") if tag in self.current_image.tags else None
+			return QColor("green") if tag in list(map(str, self.current_image.tags)) else None # TODO cache a list in the Image class
 
 		return None
 
@@ -107,6 +107,6 @@ class DirectoryTagModel(QAbstractListModel):
 		self.tag_map.clear()
 		for image in self.directory.images:
 			for tag in image.tags:
-				self.tag_map.setdefault(tag, []).append(image)
+				self.tag_map.setdefault(str(tag), []).append(image)
 
 		self._build_tag_cache()
