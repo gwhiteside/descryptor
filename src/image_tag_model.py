@@ -14,7 +14,6 @@ class ImageTagModel(QAbstractListModel):
 	def __init__(self, image: Image | None = None):
 		super().__init__()
 		self.image = image
-		self.new_tags: list[str] = []
 		self.changed_background = QBrush(QColor(128, 0, 0, 50))
 
 	def append_tag(self, tag: str):
@@ -27,10 +26,9 @@ class ImageTagModel(QAbstractListModel):
 		old_tags = Counter(self.image.tags)
 		self.beginInsertRows(QModelIndex(), index, index)
 		self.image.insert_tag(tag, index)
-		self.new_tags.append(tag)
+		self.image._new_tags.append(tag)
 		self.endInsertRows()
 		new_tags = Counter(self.image.tags)
-		#self.tagsModified.emit(self.image)
 		self.image_tags_modified.emit(self.image, old_tags, new_tags)
 
 	def remove_tag(self, tag: str):
@@ -92,7 +90,7 @@ class ImageTagModel(QAbstractListModel):
 			case q.EditRole:
 				return tag
 			case q.ForegroundRole:
-				if tag in self.new_tags:
+				if tag in self.image._new_tags:
 					return QColor("red")
 				else:
 					return None

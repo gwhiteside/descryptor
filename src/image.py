@@ -13,6 +13,7 @@ class Image:
 		self.thumb_size: int = 0
 		self.size: QSize | None = None
 		self._tags: list[str] | None = None # don't hold external references to _tags
+		self._new_tags: list[str] = []
 		self._modified: bool = False
 		self._mtime: float = time.monotonic()
 
