@@ -17,8 +17,8 @@ class ImageTagModel(QAbstractListModel):
 		self.changed_background = QBrush(QColor(128, 0, 0, 50))
 
 	def append_tag(self, tag: str):
-		"""Convenience method equivalent to ``insert_tag`` with no index."""
-		self.insert_tag(tag)
+		"""Adds ``tag`` to end of the list."""
+		self.insert_tag(tag) # TODO cache a list in the Image class
 
 	def insert_tag(self, tag: str, index: int | None = None):
 		if index is None:

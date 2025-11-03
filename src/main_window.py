@@ -110,7 +110,15 @@ class MainWindow(QMainWindow):
 		text = editor.text().strip()
 		if not text:
 			return
-		self.image_tag_model.insert_tag(text)
+
+		indexes = self.imgtagListView.selectedIndexes()
+		if len(indexes) > 0:
+			index = indexes[0]
+			self.image_tag_model.insert_tag(text, index.row())
+			self.imgtagListView.setCurrentIndex(index)
+		else:
+			self.image_tag_model.append_tag(text)
+
 		editor.clear()
 
 	def delete_selected_item(self):
