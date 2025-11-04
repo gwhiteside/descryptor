@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PyQt6.QtCore import QRunnable, QObject, pyqtSignal, pyqtSlot, Qt
+from PyQt6.QtCore import QRunnable, QObject, pyqtSignal, pyqtSlot, Qt, QPoint, QRect, QSize
 from PyQt6.QtGui import QPixmap, QIcon, QImage
 
 from src.image import Image
@@ -13,6 +13,7 @@ class ThumbnailTask(QRunnable):
 	def __init__(self, image: Image, loader: ThumbnailLoader):
 		super().__init__()
 		self.image = image
+		self.thumb_size = 200
 		self.loader = loader
 
 	@pyqtSlot()
@@ -22,10 +23,18 @@ class ThumbnailTask(QRunnable):
 		if not qimage.isNull():
 			self.image.size = qimage.size()
 			qimage = qimage.scaled(
-				200,  # self.size,  # width
-				200,  # self.size,  # height
-				Qt.AspectRatioMode.KeepAspectRatio,  # aspectRatioMode
-				Qt.TransformationMode.SmoothTransformation  # transformMode
+				self.thumb_size,
+				self.thumb_size,
+				Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+				Qt.TransformationMode.SmoothTransformation
 			)
-		self.image.thumbnail = qimage
+		self.image.preview = qimage
+
+		top_left = QPoint(
+			(qimage.width() - self.thumb_size) // 2,
+			(qimage.height() - self.thumb_size) // 2
+		)
+		crop_rect = QRect(top_left, QSize(self.thumb_size, self.thumb_size))
+
+		self.image.thumbnail = qimage.copy(crop_rect)
 		self.loader.thumbnail_ready.emit(self.image)

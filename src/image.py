@@ -21,6 +21,7 @@ class Image:
 	def __init__(self, path: Path):
 		self.path = path
 		self._thumbnail: QIcon | QImage | None = None
+		self._preview: QIcon | QImage | None = None
 		self.thumb_size: int = 0
 		self.size: QSize | None = None
 		self._tag_entries: list[TagEntry] | None = None # don't hold external references to _tag_entries
@@ -91,6 +92,16 @@ class Image:
 		"""Marks object as modified and records the time for sorting."""
 		self._modified = is_modified
 		self._mtime = time.monotonic() if is_modified else self._mtime
+
+	@property
+	def preview(self) -> QIcon | None:
+		if type(self._preview) == QImage:
+			self._preview = QIcon(QPixmap.fromImage(self._preview))
+		return self._preview
+
+	@preview.setter
+	def preview(self, value: QIcon | QImage | None):
+		self._preview = value
 
 	@property
 	def tags(self):

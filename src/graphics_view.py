@@ -17,7 +17,7 @@ class GraphicsView(QGraphicsView):
 		self.loader.image_ready.connect(self.on_image_ready)
 
 	def load_image(self, image: Image):
-		pixmap = image.thumbnail.pixmap(QSize(500,500)) # could be done better
+		pixmap = image.preview.pixmap(QSize(500,500)) # could be done better
 		self.set_view(pixmap)
 
 		if self.current_task:

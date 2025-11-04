@@ -20,6 +20,11 @@ class ImageTagModel(QAbstractListModel):
 		"""Adds ``tag`` to end of the list."""
 		self.insert_tag(tag) # TODO cache a list in the Image class
 
+	def clear(self):
+		self.beginResetModel()
+		self.image = None
+		self.endResetModel()
+
 	def insert_tag(self, tag: str, index: int | None = None):
 		if index is None:
 			index = len(self.image.tags)
@@ -76,6 +81,9 @@ class ImageTagModel(QAbstractListModel):
 	# overrides
 
 	def data(self, index: QModelIndex = QModelIndex(), role: int = Qt.ItemDataRole.DisplayRole):
+		if self.image is None:
+			return None
+
 		tag = self.image.tags[index.row()]
 
 		q = Qt.ItemDataRole
