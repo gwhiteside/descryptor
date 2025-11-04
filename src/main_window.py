@@ -2,15 +2,10 @@ from PyQt6.QtCore import QItemSelectionRange, Qt, QSize, pyqtSignal
 from PyQt6.QtGui import QPainter, QShortcut, QKeySequence
 from PyQt6.QtWidgets import (
 	QMainWindow, QGraphicsScene,
-	QFileDialog, QListView, QDockWidget, QLineEdit
+	QFileDialog, QListView, QLineEdit, QDockWidget
 )
-from PyQt6.uic import loadUi
-from PyQt6Ads import CDockManager
-
-import PyQt6Ads as ads
 
 from src.directory_tag_model import DirectoryTagModel
-from src.float_dock_widget import FloatDockWidget
 from src.graphics_view import GraphicsView
 from src.image_tag_model import ImageTagModel
 from src.image import Image
@@ -29,37 +24,50 @@ class MainWindow(QMainWindow):
 		super().__init__()
 
 		# Instance variables
-		self.tag_editor_list_view = None
 		self.directory_image_model = DirectoryImageModel()
 		self.directory_tag_model = DirectoryTagModel()
 
 		# Assemble interface
+
+		self.setDockOptions(
+			QMainWindow.DockOption.AllowNestedDocks |
+			QMainWindow.DockOption.AllowTabbedDocks |
+			QMainWindow.DockOption.AnimatedDocks
+		)
 
 		image_viewer = ImageViewer()
 		tag_viewer = TagViewer()
 		tag_editor = TagEditor()
 		image_selector = ImageSelector()
 
-		CDockManager.setConfigFlags(CDockManager.configFlags().DefaultOpaqueConfig)
-		CDockManager.setConfigFlag(CDockManager.configFlags().ActiveTabHasCloseButton, False)
-
-		dock_manager = CDockManager(self)
-
-		self.tag_viewer_dock = dock_manager.createDockWidget("Tag Viewer")
+		self.tag_viewer_dock = QDockWidget("Tag Viewer")
 		self.tag_viewer_dock.setWidget(tag_viewer)
-		dock_manager.addDockWidget(ads.DockWidgetArea.LeftDockWidgetArea, self.tag_viewer_dock)
 
-		self.tag_editor_dock = dock_manager.createDockWidget("Tag Editor")
+		self.tag_editor_dock = QDockWidget("Tag Editor")
 		self.tag_editor_dock.setWidget(tag_editor)
-		dock_manager.addDockWidget(ads.DockWidgetArea.LeftDockWidgetArea, self.tag_editor_dock)
 
-		self.image_viewer_dock = dock_manager.createDockWidget("Image Viewer")
+		self.image_viewer_dock = QDockWidget("Image Viewer")
 		self.image_viewer_dock.setWidget(image_viewer)
-		dock_manager.addDockWidget(ads.DockWidgetArea.LeftDockWidgetArea, self.image_viewer_dock)
 
-		self.image_selector_dock = dock_manager.createDockWidget("Image Selector")
+		self.image_selector_dock = QDockWidget("Image Selector")
 		self.image_selector_dock.setWidget(image_selector)
-		dock_manager.addDockWidget(ads.DockWidgetArea.LeftDockWidgetArea, self.image_selector_dock)
+
+		self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.image_selector_dock)
+		self.splitDockWidget(self.image_selector_dock, self.image_viewer_dock, Qt.Orientation.Horizontal)
+		self.splitDockWidget(self.image_viewer_dock, self.tag_editor_dock, Qt.Orientation.Horizontal)
+		self.splitDockWidget(self.tag_editor_dock, self.tag_viewer_dock, Qt.Orientation.Horizontal)
+
+		self.setCentralWidget(None)
+		self.resizeDocks(
+			[
+				self.image_selector_dock,
+				self.image_viewer_dock,
+				self.tag_editor_dock,
+				self.tag_viewer_dock
+			],
+			[200, 200, 200, 200],
+			Qt.Orientation.Horizontal
+		)
 
 		self.setWindowTitle("descryptor")
 

@@ -7,7 +7,7 @@ from main_window import MainWindow
 
 """
 Currently there's a library bug causing issues with Wayland.
-Set XDG_SESSION_TYPE=wayland and QT_QPA_PLATFORM=xcb for a less-buggy workaround.
+For XDG_SESSION_TYPE=wayland set QT_QPA_PLATFORM=xcb for a less-buggy workaround.
 """
 
 
