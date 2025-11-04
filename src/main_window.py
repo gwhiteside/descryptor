@@ -41,6 +41,7 @@ class MainWindow(QMainWindow):
 		image_selector = ImageSelector()
 
 		CDockManager.setConfigFlags(CDockManager.configFlags().DefaultOpaqueConfig)
+		CDockManager.setConfigFlag(CDockManager.configFlags().ActiveTabHasCloseButton, False)
 
 		dock_manager = CDockManager(self)
 
