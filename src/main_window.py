@@ -1,6 +1,6 @@
 from PyQt6.QtCore import QItemSelectionRange, Qt, QSize, pyqtSignal, QRect
 from PyQt6.QtGui import QAction, QKeySequence, QIcon, QShortcut
-from PyQt6.QtWidgets import QMainWindow, QFileDialog, QDockWidget, QMenu
+from PyQt6.QtWidgets import QMainWindow, QFileDialog, QDockWidget, QMenu, QHBoxLayout, QWidget
 
 from src.directory_tag_model import DirectoryTagModel
 from src.float_dock_widget import FloatDockWidget
@@ -47,10 +47,15 @@ class MainWindow(QMainWindow):
 		self.image_selector_dock = QDockWidget("Image Selector")
 		self.image_selector_dock.setWidget(self.image_selector)
 
+		self.unified_tag_dock = QDockWidget("Tags")
+
 		self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.image_selector_dock)
 		self.splitDockWidget(self.image_selector_dock, self.image_viewer_dock, Qt.Orientation.Horizontal)
 		self.splitDockWidget(self.image_viewer_dock, self.tag_editor_dock, Qt.Orientation.Horizontal)
 		self.splitDockWidget(self.tag_editor_dock, self.tag_viewer_dock, Qt.Orientation.Horizontal)
+
+		self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.unified_tag_dock)
+		self.unified_tag_dock.hide()
 
 		self.setCentralWidget(None)
 		self.resizeDocks(
@@ -82,7 +87,7 @@ class MainWindow(QMainWindow):
 
 		file_menu = menu.addMenu("&File")
 
-		open_action = QAction(QIcon.fromTheme(QIcon.ThemeIcon.FolderOpen), "&Open Directory", self)
+		open_action = QAction(QIcon.fromTheme(QIcon.ThemeIcon.FolderOpen), "&Open Directory", file_menu)
 		open_action.triggered.connect(self.open_directory)
 		file_menu.addAction(open_action)
 
@@ -91,17 +96,23 @@ class MainWindow(QMainWindow):
 
 		file_menu.addSeparator()
 
-		save_action = QAction(QIcon.fromTheme(QIcon.ThemeIcon.DocumentSave), "&Save", self)
+		save_action = QAction(QIcon.fromTheme(QIcon.ThemeIcon.DocumentSave), "&Save", file_menu)
 		save_action.triggered.connect(self.save)
 		file_menu.addAction(save_action)
 
 		file_menu.addSeparator()
 
-		quit_action = QAction(QIcon.fromTheme(QIcon.ThemeIcon.ApplicationExit), "&Quit", self)
+		quit_action = QAction(QIcon.fromTheme(QIcon.ThemeIcon.ApplicationExit), "&Quit", file_menu)
 		quit_action.triggered.connect(self.close)
 		file_menu.addAction(quit_action)
 
 		view_menu = menu.addMenu("&View")
+
+		unified_tag_dock_action = QAction("Unified Tag Panel", view_menu)
+		unified_tag_dock_action.setCheckable(True)
+		unified_tag_dock_action.setChecked(False)
+		unified_tag_dock_action.triggered.connect(self.toggle_unified_dock)
+		view_menu.addAction(unified_tag_dock_action)
 
 		# Create keyboard shortcuts
 
@@ -217,8 +228,25 @@ class MainWindow(QMainWindow):
 			prev_index = model.index(current_index.row() - 1, 0)
 			view.setCurrentIndex(prev_index)
 
-	def update_dynamic_labels(self, directory: Directory | None = None, image: Image | None = None):
+	def toggle_unified_dock(self, unified: bool):
+		if unified:
+			self.tag_editor_dock.hide()
+			self.tag_viewer_dock.hide()
+			layout = QHBoxLayout()
+			layout.addWidget(self.tag_editor, 1)
+			layout.addWidget(self.tag_viewer, 1)
+			widget = QWidget()
+			widget.setLayout(layout)
+			self.unified_tag_dock.setWidget(widget)
+			self.unified_tag_dock.show()
+		else:
+			self.unified_tag_dock.hide()
+			self.tag_editor_dock.setWidget(self.tag_editor)
+			self.tag_viewer_dock.setWidget(self.tag_viewer)
+			self.tag_editor_dock.show()
+			self.tag_viewer_dock.show()
 
+	def update_dynamic_labels(self, directory: Directory | None = None, image: Image | None = None):
 		if image:
 			self.image_viewer_dock.setWindowTitle(image.path.name)
 			self.tag_editor_dock.setWindowTitle("Image Tags ({})".format(len(image.tags)))
