@@ -1,6 +1,6 @@
 from PyQt6.QtCore import QItemSelectionRange, Qt, QSize, pyqtSignal, QRect
-from PyQt6.QtGui import QAction
-from PyQt6.QtWidgets import QMainWindow, QFileDialog, QDockWidget
+from PyQt6.QtGui import QAction, QKeySequence, QIcon, QShortcut
+from PyQt6.QtWidgets import QMainWindow, QFileDialog, QDockWidget, QMenu
 
 from src.directory_tag_model import DirectoryTagModel
 from src.float_dock_widget import FloatDockWidget
@@ -81,30 +81,42 @@ class MainWindow(QMainWindow):
 		menu = self.menuBar()
 
 		file_menu = menu.addMenu("&File")
-		file_menu.addAction(QAction("Open Directory", self))
-		file_menu.addAction(QAction("Recent", self))
+
+		open_action = QAction(QIcon.fromTheme(QIcon.ThemeIcon.FolderOpen), "&Open Directory", self)
+		open_action.triggered.connect(self.open_directory)
+		file_menu.addAction(open_action)
+
+		self.recent_menu = QMenu("&Recent", file_menu)
+		file_menu.addMenu(self.recent_menu)
+
 		file_menu.addSeparator()
-		file_menu.addAction(QAction("Save", self))
+
+		save_action = QAction(QIcon.fromTheme(QIcon.ThemeIcon.DocumentSave), "&Save", self)
+		save_action.triggered.connect(self.save)
+		file_menu.addAction(save_action)
+
 		file_menu.addSeparator()
-		file_menu.addAction(QAction("Quit", self))
+
+		quit_action = QAction(QIcon.fromTheme(QIcon.ThemeIcon.ApplicationExit), "&Quit", self)
+		quit_action.triggered.connect(self.close)
+		file_menu.addAction(quit_action)
+
+		view_menu = menu.addMenu("&View")
 
 		# Create keyboard shortcuts
 
-		# self.actionOpen.setShortcut(QKeySequence.StandardKey.Open)
-		# self.actionQuit.setShortcut(QKeySequence.StandardKey.Quit)
-		# self.actionSave.setShortcut(QKeySequence.StandardKey.Save)
-		# self.delete_shortcut = QShortcut(QKeySequence.StandardKey.Delete, self.tag_editor.list_view)
-		# self.next_image_shortcut = QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_N), self)
-		# self.prev_image_shortcut = QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_P), self)
+		open_action.setShortcut(QKeySequence.StandardKey.Open)
+		quit_action.setShortcut(QKeySequence.StandardKey.Quit)
+		save_action.setShortcut(QKeySequence.StandardKey.Save)
+		delete_shortcut = QShortcut(QKeySequence.StandardKey.Delete, self.tag_editor.list_view)
+		next_image_shortcut = QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_N), self)
+		prev_image_shortcut = QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_P), self)
 
 		# Connect signals
 
-		# self.actionOpen.triggered.connect(self.open_directory)
-		# self.actionQuit.triggered.connect(self.close)
-		# self.actionSave.triggered.connect(self.save)
-		# self.delete_shortcut.activated.connect(self.delete_selected_item)
-		# self.next_image_shortcut.activated.connect(self.select_next_image)
-		# self.prev_image_shortcut.activated.connect(self.select_prev_image)
+		delete_shortcut.activated.connect(self.delete_selected_item)
+		next_image_shortcut.activated.connect(self.select_next_image)
+		prev_image_shortcut.activated.connect(self.select_prev_image)
 		self.image_loaded.connect(self.directory_tag_model.on_image_loaded)
 		self.image_selector.listview.selectionModel().selectionChanged.connect(self.display_image)
 		self.image_tag_model.image_tags_modified.connect(self.directory_image_model.on_image_tags_modified)
@@ -112,6 +124,7 @@ class MainWindow(QMainWindow):
 		self.tag_editor.line_edit.returnPressed.connect(self.add_tag)
 
 		self.tag_editor.line_edit.setEnabled(False) # enabled once something is loaded
+		self.recent_menu.setEnabled(False) # enabled when there are previously opened locations
 
 		# Auto load image directory for testing
 		self.open_directory()
