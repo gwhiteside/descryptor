@@ -13,7 +13,7 @@ class DirectoryImageModel(QAbstractListModel):
 		self.directory: Directory | None = None
 		self.changed_background = QBrush(QColor(255, 0, 0, 50))
 		self.changed_font = QFont(None, -1, -1, True)
-		self.loading_icon = QIcon(QPixmap("./busy.gif"))
+		self.loading_icon = QIcon.fromTheme(QIcon.ThemeIcon.ImageLoading)
 
 		self.loader = ThumbnailLoader()
 		self.loader.thumbnail_ready.connect(self.on_thumbnail_ready)
