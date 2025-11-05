@@ -1,12 +1,9 @@
-from PyQt6.QtCore import QItemSelectionRange, Qt, QSize, pyqtSignal
-from PyQt6.QtGui import QPainter, QShortcut, QKeySequence
-from PyQt6.QtWidgets import (
-	QMainWindow, QGraphicsScene,
-	QFileDialog, QListView, QLineEdit, QDockWidget
-)
+from PyQt6.QtCore import QItemSelectionRange, Qt, QSize, pyqtSignal, QRect
+from PyQt6.QtGui import QAction
+from PyQt6.QtWidgets import QMainWindow, QFileDialog, QDockWidget
 
 from src.directory_tag_model import DirectoryTagModel
-from src.graphics_view import GraphicsView
+from src.float_dock_widget import FloatDockWidget
 from src.image_tag_model import ImageTagModel
 from src.image import Image
 from src.directory import Directory
@@ -23,11 +20,9 @@ class MainWindow(QMainWindow):
 	def __init__(self):
 		super().__init__()
 
-		# Instance variables
-		self.directory_image_model = DirectoryImageModel()
-		self.directory_tag_model = DirectoryTagModel()
-
 		# Assemble interface
+
+		self.setWindowTitle("descryptor")
 
 		self.setDockOptions(
 			QMainWindow.DockOption.AllowNestedDocks |
@@ -35,22 +30,22 @@ class MainWindow(QMainWindow):
 			QMainWindow.DockOption.AnimatedDocks
 		)
 
-		image_viewer = ImageViewer()
-		tag_viewer = TagViewer()
-		tag_editor = TagEditor()
-		image_selector = ImageSelector()
+		self.image_viewer = ImageViewer()
+		self.tag_viewer = TagViewer()
+		self.tag_editor = TagEditor()
+		self.image_selector = ImageSelector()
 
-		self.tag_viewer_dock = QDockWidget("Tag Viewer")
-		self.tag_viewer_dock.setWidget(tag_viewer)
+		self.tag_viewer_dock = FloatDockWidget("Tag Viewer")
+		self.tag_viewer_dock.setWidget(self.tag_viewer)
 
-		self.tag_editor_dock = QDockWidget("Tag Editor")
-		self.tag_editor_dock.setWidget(tag_editor)
+		self.tag_editor_dock = FloatDockWidget("Tag Editor")
+		self.tag_editor_dock.setWidget(self.tag_editor)
 
-		self.image_viewer_dock = QDockWidget("Image Viewer")
-		self.image_viewer_dock.setWidget(image_viewer)
+		self.image_viewer_dock = FloatDockWidget("Image Viewer")
+		self.image_viewer_dock.setWidget(self.image_viewer)
 
 		self.image_selector_dock = QDockWidget("Image Selector")
-		self.image_selector_dock.setWidget(image_selector)
+		self.image_selector_dock.setWidget(self.image_selector)
 
 		self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.image_selector_dock)
 		self.splitDockWidget(self.image_selector_dock, self.image_viewer_dock, Qt.Orientation.Horizontal)
@@ -65,39 +60,40 @@ class MainWindow(QMainWindow):
 				self.tag_editor_dock,
 				self.tag_viewer_dock
 			],
-			[200, 200, 200, 200],
+			[300, 300, 150, 150],
 			Qt.Orientation.Horizontal
 		)
 
-		self.setWindowTitle("descryptor")
+		self.resize(QSize(1280, 768))
 
-		self.image_viewer_gfx_view: GraphicsView = image_viewer.gfx_view
-		self.selector_list_view: QListView = image_selector.listview
-		self.tag_editor_list_view: QListView = tag_editor.list_view
-		self.tag_viewer_list_view: QListView = tag_viewer.listview
-		self.tag_editor_line_edit: QLineEdit = tag_editor.line_edit
+		# Set models
 
-		# Set up selector list view model
-		self.selector_list_view.setModel(self.directory_image_model)
-
-		# Set up image tags list view model
+		self.directory_image_model = DirectoryImageModel()
+		self.directory_tag_model = DirectoryTagModel()
 		self.image_tag_model = ImageTagModel()
-		self.tag_editor_list_view.setModel(self.image_tag_model)
 
-		# Set up directory tags list view model
-		self.tag_viewer_list_view.setModel(self.directory_tag_model)
+		self.image_selector.listview.setModel(self.directory_image_model)
+		self.tag_editor.list_view.setModel(self.image_tag_model)
+		self.tag_viewer.listview.setModel(self.directory_tag_model)
 
-		# Set up graphics view
-		self.scene = QGraphicsScene()
-		self.image_viewer_gfx_view.setScene(self.scene)
-		self.image_viewer_gfx_view.setRenderHint(QPainter.RenderHint.Antialiasing)
+		# Create menu bar
+
+		menu = self.menuBar()
+
+		file_menu = menu.addMenu("&File")
+		file_menu.addAction(QAction("Open Directory", self))
+		file_menu.addAction(QAction("Recent", self))
+		file_menu.addSeparator()
+		file_menu.addAction(QAction("Save", self))
+		file_menu.addSeparator()
+		file_menu.addAction(QAction("Quit", self))
 
 		# Create keyboard shortcuts
 
 		# self.actionOpen.setShortcut(QKeySequence.StandardKey.Open)
 		# self.actionQuit.setShortcut(QKeySequence.StandardKey.Quit)
 		# self.actionSave.setShortcut(QKeySequence.StandardKey.Save)
-		# self.delete_shortcut = QShortcut(QKeySequence.StandardKey.Delete, self.tag_editor_list_view)
+		# self.delete_shortcut = QShortcut(QKeySequence.StandardKey.Delete, self.tag_editor.list_view)
 		# self.next_image_shortcut = QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_N), self)
 		# self.prev_image_shortcut = QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_P), self)
 
@@ -110,27 +106,27 @@ class MainWindow(QMainWindow):
 		# self.next_image_shortcut.activated.connect(self.select_next_image)
 		# self.prev_image_shortcut.activated.connect(self.select_prev_image)
 		self.image_loaded.connect(self.directory_tag_model.on_image_loaded)
-		self.selector_list_view.selectionModel().selectionChanged.connect(self.display_image)
+		self.image_selector.listview.selectionModel().selectionChanged.connect(self.display_image)
 		self.image_tag_model.image_tags_modified.connect(self.directory_image_model.on_image_tags_modified)
 		self.image_tag_model.image_tags_modified.connect(self.directory_tag_model.on_image_tags_modified)
-		self.tag_editor_line_edit.returnPressed.connect(self.add_tag)
+		self.tag_editor.line_edit.returnPressed.connect(self.add_tag)
 
-		self.tag_editor_line_edit.setEnabled(False) # enabled once something is loaded
+		self.tag_editor.line_edit.setEnabled(False) # enabled once something is loaded
 
 		# Auto load image directory for testing
 		self.open_directory()
 
 	def add_tag(self):
-		editor = self.tag_editor_line_edit
+		editor = self.tag_editor.line_edit
 		text = editor.text().strip()
 		if not text:
 			return
 
-		indexes = self.tag_editor_list_view.selectedIndexes()
+		indexes = self.tag_editor.list_view.selectedIndexes()
 		if len(indexes) > 0:
 			index = indexes[0]
 			self.image_tag_model.insert_tag(text, index.row())
-			self.tag_editor_list_view.setCurrentIndex(index)
+			self.tag_editor.list_view.setCurrentIndex(index)
 		else:
 			self.image_tag_model.append_tag(text)
 
@@ -139,12 +135,12 @@ class MainWindow(QMainWindow):
 
 	def reset_views(self):
 		"""Clears viewer, tag editor, etc. after loading a directory, for example."""
-		model: ImageTagModel | None = self.tag_editor_list_view.model()
+		model: ImageTagModel | None = self.tag_editor.list_view.model()
 		if model is not None:
 			model.clear()
 
 	def delete_selected_item(self):
-		indexes = self.tag_editor_list_view.selectedIndexes()
+		indexes = self.tag_editor.list_view.selectedIndexes()
 		if indexes:
 			index = indexes[0]
 			row = index.row()
@@ -163,7 +159,7 @@ class MainWindow(QMainWindow):
 		image: Image = self.directory_image_model.data(index, Qt.ItemDataRole.UserRole)
 
 		self.image_tag_model.set_image(image)
-		self.image_viewer_gfx_view.load_image(image)
+		self.image_viewer.gfx_view.load_image(image)
 		self.image_loaded.emit(image)
 		self.update_dynamic_labels(image=image)
 
@@ -184,7 +180,7 @@ class MainWindow(QMainWindow):
 
 		self.directory_image_model.setDirectory(directory)
 		self.directory_tag_model.load(directory)
-		self.tag_editor_line_edit.setEnabled(True)
+		self.tag_editor.line_edit.setEnabled(True)
 
 		self.reset_views()
 		self.update_dynamic_labels(directory=directory)
@@ -193,7 +189,7 @@ class MainWindow(QMainWindow):
 		self.directory_image_model.save()
 
 	def select_next_image(self):
-		view = self.selector_list_view
+		view = self.image_selector.listview
 		model = view.model()
 		current_index = view.currentIndex()
 		if current_index.isValid() and current_index.row() < model.rowCount() - 1:
@@ -201,7 +197,7 @@ class MainWindow(QMainWindow):
 			view.setCurrentIndex(next_index)
 
 	def select_prev_image(self):
-		view = self.selector_list_view
+		view = self.image_selector.listview
 		model = view.model()
 		current_index = view.currentIndex()
 		if current_index.isValid() and current_index.row() > 0:
@@ -216,9 +212,9 @@ class MainWindow(QMainWindow):
 		else:
 			self.image_viewer_dock.setWindowTitle("Viewer")
 			self.tag_editor_dock.setWindowTitle("Image Tags")
-			self.selector_list_view.selectionModel().clear()
-			self.image_viewer_gfx_view.scene().clear()
-			self.tag_editor_line_edit.clear()
+			self.image_selector.listview.selectionModel().clear()
+			self.image_viewer.gfx_view.scene().clear()
+			self.tag_editor.line_edit.clear()
 
 		if directory:
 			window_title = f"descryptor — {str(directory.path)}"

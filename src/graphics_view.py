@@ -1,6 +1,7 @@
+from PyQt6 import QtWidgets
 from PyQt6.QtCore import Qt, QSize, QThreadPool
-from PyQt6.QtGui import QWheelEvent, QPixmap, QImage
-from PyQt6.QtWidgets import QGraphicsView
+from PyQt6.QtGui import QWheelEvent, QPixmap, QImage, QPainter
+from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene
 
 from src.image import Image
 from src.image_task import ImageLoader, ImageTask
@@ -12,6 +13,11 @@ class GraphicsView(QGraphicsView):
 		self.current_zoom = 1.0
 		self.zoom_factor = 1.5
 		self.current_task: ImageTask | None = None
+
+		self.setDragMode(QtWidgets.QGraphicsView.DragMode.ScrollHandDrag)
+		self.setTransformationAnchor(QtWidgets.QGraphicsView.ViewportAnchor.NoAnchor)
+		self.setScene(QGraphicsScene())
+		self.setRenderHint(QPainter.RenderHint.Antialiasing)
 
 		self.loader = ImageLoader()
 		self.loader.image_ready.connect(self.on_image_ready)
