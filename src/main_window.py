@@ -12,7 +12,7 @@ from src.main_menu import setup_menu
 from src.panels.image_selector import ImageSelector
 from src.panels.image_viewer import ImageViewer
 from src.panels.tag_editor import TagEditor
-from src.panels.tag_viewer import TagIndex
+from src.panels.tag_index import TagIndex
 
 
 class MainWindow(QMainWindow):
