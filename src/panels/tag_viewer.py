@@ -1,7 +1,7 @@
 from PyQt6.QtWidgets import QWidget, QListView, QVBoxLayout
 
 
-class TagViewer(QWidget):
+class TagIndex(QWidget):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 

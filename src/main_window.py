@@ -8,10 +8,11 @@ from src.image_tag_model import ImageTagModel
 from src.image import Image
 from src.directory import Directory
 from src.directory_image_model import DirectoryImageModel
+from src.main_menu import setup_menu
 from src.panels.image_selector import ImageSelector
 from src.panels.image_viewer import ImageViewer
 from src.panels.tag_editor import TagEditor
-from src.panels.tag_viewer import TagViewer
+from src.panels.tag_viewer import TagIndex
 
 
 class MainWindow(QMainWindow):
@@ -19,6 +20,9 @@ class MainWindow(QMainWindow):
 
 	def __init__(self):
 		super().__init__()
+
+		self.current_image: Image | None = None
+		self.current_directory: Directory | None = None
 
 		# Assemble interface
 
@@ -31,28 +35,24 @@ class MainWindow(QMainWindow):
 		)
 
 		self.image_viewer = ImageViewer()
-		self.tag_viewer = TagViewer()
-		self.tag_editor = TagEditor()
 		self.image_selector = ImageSelector()
-
-		self.tag_viewer_dock = FloatDockWidget("Tag Viewer")
-		self.tag_viewer_dock.setWidget(self.tag_viewer)
-
-		self.tag_editor_dock = FloatDockWidget("Tag Editor")
-		self.tag_editor_dock.setWidget(self.tag_editor)
-
-		self.image_viewer_dock = FloatDockWidget("Image Viewer")
-		self.image_viewer_dock.setWidget(self.image_viewer)
+		self.tag_editor = TagEditor()
+		self.tag_index = TagIndex()
 
 		self.image_selector_dock = QDockWidget("Image Selector")
 		self.image_selector_dock.setWidget(self.image_selector)
-
+		self.image_viewer_dock = FloatDockWidget("Image Viewer")
+		self.image_viewer_dock.setWidget(self.image_viewer)
+		self.tag_editor_dock = FloatDockWidget("Tag Editor")
+		self.tag_editor_dock.setWidget(self.tag_editor)
+		self.tag_index_dock = FloatDockWidget("Tag Index")
+		self.tag_index_dock.setWidget(self.tag_index)
 		self.unified_tag_dock = QDockWidget("Tags")
 
 		self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.image_selector_dock)
 		self.splitDockWidget(self.image_selector_dock, self.image_viewer_dock, Qt.Orientation.Horizontal)
 		self.splitDockWidget(self.image_viewer_dock, self.tag_editor_dock, Qt.Orientation.Horizontal)
-		self.splitDockWidget(self.tag_editor_dock, self.tag_viewer_dock, Qt.Orientation.Horizontal)
+		self.splitDockWidget(self.tag_editor_dock, self.tag_index_dock, Qt.Orientation.Horizontal)
 
 		self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.unified_tag_dock)
 		self.unified_tag_dock.hide()
@@ -63,13 +63,17 @@ class MainWindow(QMainWindow):
 				self.image_selector_dock,
 				self.image_viewer_dock,
 				self.tag_editor_dock,
-				self.tag_viewer_dock
+				self.tag_index_dock
 			],
-			[300, 300, 150, 150],
+			[2, 2, 1, 1],
 			Qt.Orientation.Horizontal
 		)
 
 		self.resize(QSize(1280, 768))
+
+		# Create menu bar
+
+		setup_menu(self)
 
 		# Set models
 
@@ -79,46 +83,10 @@ class MainWindow(QMainWindow):
 
 		self.image_selector.listview.setModel(self.directory_image_model)
 		self.tag_editor.list_view.setModel(self.image_tag_model)
-		self.tag_viewer.listview.setModel(self.directory_tag_model)
+		self.tag_index.listview.setModel(self.directory_tag_model)
 
-		# Create menu bar
+		# Create interface shortcuts
 
-		menu = self.menuBar()
-
-		file_menu = menu.addMenu("&File")
-
-		open_action = QAction(QIcon.fromTheme(QIcon.ThemeIcon.FolderOpen), "&Open Directory", file_menu)
-		open_action.triggered.connect(self.open_directory)
-		file_menu.addAction(open_action)
-
-		self.recent_menu = QMenu("&Recent", file_menu)
-		file_menu.addMenu(self.recent_menu)
-
-		file_menu.addSeparator()
-
-		save_action = QAction(QIcon.fromTheme(QIcon.ThemeIcon.DocumentSave), "&Save", file_menu)
-		save_action.triggered.connect(self.save)
-		file_menu.addAction(save_action)
-
-		file_menu.addSeparator()
-
-		quit_action = QAction(QIcon.fromTheme(QIcon.ThemeIcon.ApplicationExit), "&Quit", file_menu)
-		quit_action.triggered.connect(self.close)
-		file_menu.addAction(quit_action)
-
-		view_menu = menu.addMenu("&View")
-
-		unified_tag_dock_action = QAction("Unified Tag Panel", view_menu)
-		unified_tag_dock_action.setCheckable(True)
-		unified_tag_dock_action.setChecked(False)
-		unified_tag_dock_action.triggered.connect(self.toggle_unified_dock)
-		view_menu.addAction(unified_tag_dock_action)
-
-		# Create keyboard shortcuts
-
-		open_action.setShortcut(QKeySequence.StandardKey.Open)
-		quit_action.setShortcut(QKeySequence.StandardKey.Quit)
-		save_action.setShortcut(QKeySequence.StandardKey.Save)
 		delete_shortcut = QShortcut(QKeySequence.StandardKey.Delete, self.tag_editor.list_view)
 		next_image_shortcut = QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_N), self)
 		prev_image_shortcut = QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_P), self)
@@ -133,6 +101,8 @@ class MainWindow(QMainWindow):
 		self.image_tag_model.image_tags_modified.connect(self.directory_image_model.on_image_tags_modified)
 		self.image_tag_model.image_tags_modified.connect(self.directory_tag_model.on_image_tags_modified)
 		self.tag_editor.line_edit.returnPressed.connect(self.add_tag)
+
+		# Set initial state for widgets, etc.
 
 		self.tag_editor.line_edit.setEnabled(False) # enabled once something is loaded
 		self.recent_menu.setEnabled(False) # enabled when there are previously opened locations
@@ -155,13 +125,15 @@ class MainWindow(QMainWindow):
 			self.image_tag_model.append_tag(text)
 
 		editor.clear()
-		self.update_dynamic_labels(image=self.image_tag_model.image)
+		self.update_dynamic_labels()
 
 	def reset_views(self):
 		"""Clears viewer, tag editor, etc. after loading a directory, for example."""
 		model: ImageTagModel | None = self.tag_editor.list_view.model()
 		if model is not None:
 			model.clear()
+
+		self.current_image = None
 
 	def delete_selected_item(self):
 		indexes = self.tag_editor.list_view.selectedIndexes()
@@ -170,7 +142,7 @@ class MainWindow(QMainWindow):
 			row = index.row()
 			self.image_tag_model.remove_tag_at(row)
 
-		self.update_dynamic_labels(image=self.image_tag_model.image)
+		self.update_dynamic_labels()
 
 	def display_image(self, selected_items: QItemSelectionRange, deselected_items):
 		"""Display selected image in graphics view"""
@@ -185,7 +157,8 @@ class MainWindow(QMainWindow):
 		self.image_tag_model.set_image(image)
 		self.image_viewer.gfx_view.load_image(image)
 		self.image_loaded.emit(image)
-		self.update_dynamic_labels(image=image)
+		self.current_image = image
+		self.update_dynamic_labels()
 
 	def open_directory(self):
 		"""Open directory dialog and load images"""
@@ -207,7 +180,8 @@ class MainWindow(QMainWindow):
 		self.tag_editor.line_edit.setEnabled(True)
 
 		self.reset_views()
-		self.update_dynamic_labels(directory=directory)
+		self.current_directory = directory
+		self.update_dynamic_labels()
 
 	def save(self):
 		self.directory_image_model.save()
@@ -230,35 +204,60 @@ class MainWindow(QMainWindow):
 
 	def toggle_unified_dock(self, unified: bool):
 		if unified:
+			selector_width = self.image_selector.width()
+			viewer_width = self.image_viewer.width()
+			editor_width = self.tag_editor.width()
+			index_width = self.tag_index.width()
+
 			self.tag_editor_dock.hide()
-			self.tag_viewer_dock.hide()
+			self.tag_index_dock.hide()
+
 			layout = QHBoxLayout()
+			layout.setContentsMargins(0, 0, 0, 0)
+			layout.setSpacing(0)
 			layout.addWidget(self.tag_editor, 1)
-			layout.addWidget(self.tag_viewer, 1)
+			layout.addWidget(self.tag_index, 1)
+
 			widget = QWidget()
 			widget.setLayout(layout)
+
 			self.unified_tag_dock.setWidget(widget)
+
+			self.resizeDocks(
+				[self.image_selector_dock, self.image_viewer_dock, self.unified_tag_dock],
+				[selector_width, viewer_width, editor_width + index_width],
+				Qt.Orientation.Horizontal
+			)
+
 			self.unified_tag_dock.show()
 		else:
 			self.unified_tag_dock.hide()
 			self.tag_editor_dock.setWidget(self.tag_editor)
-			self.tag_viewer_dock.setWidget(self.tag_viewer)
+			self.tag_index_dock.setWidget(self.tag_index)
 			self.tag_editor_dock.show()
-			self.tag_viewer_dock.show()
+			self.tag_index_dock.show()
 
-	def update_dynamic_labels(self, directory: Directory | None = None, image: Image | None = None):
-		if image:
-			self.image_viewer_dock.setWindowTitle(image.path.name)
-			self.tag_editor_dock.setWindowTitle("Image Tags ({})".format(len(image.tags)))
+	def update_dynamic_labels(self):
+		if self.current_image:
+			image_viewer_title = self.current_image.path.name
+			tag_editor_title = "Image Tags ({})".format(len(self.current_image.tags))
+			unified_tag_title = "Tags ({}/{})".format(len(self.current_image.tags), len(self.directory_tag_model.tag_map))
 		else:
-			self.image_viewer_dock.setWindowTitle("Viewer")
-			self.tag_editor_dock.setWindowTitle("Image Tags")
+			image_viewer_title = "Viewer"
+			tag_editor_title = "Image Tags"
+			unified_tag_title = "Tags"
 			self.image_selector.listview.selectionModel().clear()
 			self.image_viewer.gfx_view.scene().clear()
 			self.tag_editor.line_edit.clear()
 
-		if directory:
-			window_title = f"descryptor — {str(directory.path)}"
-			self.setWindowTitle(window_title)
+		if self.current_directory:
+			window_title = f"descryptor — {str(self.current_directory.path)}"
+		else:
+			window_title = "descryptor"
 
-		self.tag_viewer_dock.setWindowTitle("Directory Tags ({})".format(len(self.directory_tag_model.tag_map)))
+		self.setWindowTitle(window_title)
+		self.image_viewer_dock.setWindowTitle(image_viewer_title)
+		self.tag_editor_dock.setWindowTitle(tag_editor_title)
+		self.unified_tag_dock.setWindowTitle(unified_tag_title)
+
+		self.tag_index_dock.setWindowTitle("Directory Tags ({})".format(len(self.directory_tag_model.tag_map)))
