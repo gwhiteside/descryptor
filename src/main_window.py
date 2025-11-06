@@ -88,8 +88,8 @@ class MainWindow(QMainWindow):
 		# Create interface shortcuts
 
 		delete_shortcut = QShortcut(QKeySequence.StandardKey.Delete, self.tag_editor.list_view)
-		next_image_shortcut = QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_N), self)
-		prev_image_shortcut = QShortcut(QKeySequence(Qt.KeyboardModifier.ControlModifier | Qt.Key.Key_P), self)
+		next_image_shortcut = QShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_N), self)
+		prev_image_shortcut = QShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_P), self)
 
 		# Connect signals
 
