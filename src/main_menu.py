@@ -17,7 +17,7 @@ def setup_menu(window: "MainWindow"):
 	file_menu.addSeparator()
 
 	save_action = QAction(QIcon.fromTheme(QIcon.ThemeIcon.DocumentSave), "&Save", file_menu)
-	save_action.triggered.connect(window.save)
+	save_action.triggered.connect(window.save_tags)
 	file_menu.addAction(save_action)
 
 	file_menu.addSeparator()

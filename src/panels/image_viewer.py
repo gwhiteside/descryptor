@@ -7,6 +7,7 @@ from src.graphics_view import GraphicsView
 class ImageViewer(QWidget):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+		self.setObjectName("image_viewer")
 
 		main_vbox = QVBoxLayout()
 

@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import QWidget, QListView, QVBoxLayout, QLineEdit
 class TagEditor(QWidget):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+		self.setObjectName("tag_editor")
 
 		main_vbox = QVBoxLayout()
 		self.line_edit = QLineEdit()

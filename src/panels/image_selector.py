@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QListView
 class ImageSelector(QWidget):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+		self.setObjectName("image_selector")
 
 		self.listview = QListView()
 

@@ -1,0 +1,47 @@
+from dataclasses import dataclass
+from enum import Enum
+
+from PyQt6.QtCore import QSettings, QByteArray
+
+APP_NAME = "descryptor"
+
+
+@dataclass(frozen=True)
+class Entry:
+	key: str
+	default: object
+
+class Setting(Enum):
+	RestoreLayout = Entry("restore_layout", True)
+
+	LayoutGeometry = Entry("Layout/geometry", QByteArray())
+	LayoutState = Entry("Layout/state", QByteArray())
+	UnifiedTagDock = Entry("Layout/unified_tag_dock", False)
+
+	RecentDirectories = Entry("Recent/directories", [])
+
+class Config:
+	_manager = QSettings(APP_NAME, APP_NAME)
+
+	@staticmethod
+	def contains(entry: Setting) -> bool:
+		return Config._manager.contains(entry.value.key)
+
+	@staticmethod
+	def initialize():
+		for setting in Setting:
+			key = setting.value.key
+			if not Config._manager.contains(key):
+				Config._manager.setValue(key, setting.value.default)
+
+	@staticmethod
+	def read(entry: Setting):
+		return Config._manager.value(entry.value.key, entry.value.default)
+
+	@staticmethod
+	def reset(entry: Setting):
+		Config._manager.remove(entry.value.key)
+
+	@staticmethod
+	def write(entry: Setting, value):
+		Config._manager.setValue(entry.value.key, value)

@@ -1,5 +1,5 @@
-from PyQt6.QtCore import QItemSelectionRange, Qt, QSize, pyqtSignal, QRect
-from PyQt6.QtGui import QAction, QKeySequence, QIcon, QShortcut
+from PyQt6.QtCore import QItemSelectionRange, Qt, QSize, pyqtSignal, QRect, QSettings
+from PyQt6.QtGui import QAction, QKeySequence, QIcon, QShortcut, QCloseEvent
 from PyQt6.QtWidgets import QMainWindow, QFileDialog, QDockWidget, QMenu, QHBoxLayout, QWidget
 
 from src.directory_tag_model import DirectoryTagModel
@@ -13,6 +13,7 @@ from src.panels.image_selector import ImageSelector
 from src.panels.image_viewer import ImageViewer
 from src.panels.tag_editor import TagEditor
 from src.panels.tag_index import TagIndex
+from src.config import Config, Setting
 
 
 class MainWindow(QMainWindow):
@@ -40,14 +41,19 @@ class MainWindow(QMainWindow):
 		self.tag_index = TagIndex()
 
 		self.image_selector_dock = QDockWidget("Image Selector")
+		self.image_selector_dock.setObjectName("image_selector_dock")
 		self.image_selector_dock.setWidget(self.image_selector)
 		self.image_viewer_dock = FloatDockWidget("Image Viewer")
+		self.image_viewer_dock.setObjectName("image_viewer_dock")
 		self.image_viewer_dock.setWidget(self.image_viewer)
 		self.tag_editor_dock = FloatDockWidget("Tag Editor")
+		self.tag_editor_dock.setObjectName("tag_editor_dock")
 		self.tag_editor_dock.setWidget(self.tag_editor)
 		self.tag_index_dock = FloatDockWidget("Tag Index")
+		self.tag_index_dock.setObjectName("tag_index_dock")
 		self.tag_index_dock.setWidget(self.tag_index)
 		self.unified_tag_dock = QDockWidget("Tags")
+		self.unified_tag_dock.setObjectName("unified_tag_dock")
 
 		self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.image_selector_dock)
 		self.splitDockWidget(self.image_selector_dock, self.image_viewer_dock, Qt.Orientation.Horizontal)
@@ -106,6 +112,11 @@ class MainWindow(QMainWindow):
 
 		self.tag_editor.line_edit.setEnabled(False) # enabled once something is loaded
 		self.recent_menu.setEnabled(False) # enabled when there are previously opened locations
+
+		# Restore window geometry
+		if Config.read(Setting.RestoreLayout):
+			self.restoreGeometry(Config.read(Setting.LayoutGeometry))
+			self.restoreState(Config.read(Setting.LayoutState))
 
 		# Auto load image directory for testing
 		self.open_directory()
@@ -183,7 +194,7 @@ class MainWindow(QMainWindow):
 		self.current_directory = directory
 		self.update_dynamic_labels()
 
-	def save(self):
+	def save_tags(self):
 		self.directory_image_model.save()
 
 	def select_next_image(self):
@@ -251,9 +262,9 @@ class MainWindow(QMainWindow):
 			self.tag_editor.line_edit.clear()
 
 		if self.current_directory:
-			window_title = f"descryptor — {str(self.current_directory.path)}"
+			window_title = str(self.current_directory.path)
 		else:
-			window_title = "descryptor"
+			window_title = None
 
 		self.setWindowTitle(window_title)
 		self.image_viewer_dock.setWindowTitle(image_viewer_title)
@@ -261,3 +272,8 @@ class MainWindow(QMainWindow):
 		self.unified_tag_dock.setWindowTitle(unified_tag_title)
 
 		self.tag_index_dock.setWindowTitle("Directory Tags ({})".format(len(self.directory_tag_model.tag_map)))
+
+	def closeEvent(self, event: QCloseEvent | None):
+		if Config.read(Setting.RestoreLayout):
+			Config.write(Setting.LayoutGeometry, self.saveGeometry())
+			Config.write(Setting.LayoutState, self.saveState())
