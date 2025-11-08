@@ -1,6 +1,8 @@
 from PyQt6.QtGui import QAction, QIcon, QKeySequence
 from PyQt6.QtWidgets import QMenu, QMainWindow, QMenuBar
 
+from src.recent_menu import RecentMenu
+
 
 def setup_menu(window: "MainWindow"):
 	menu: QMenuBar = window.menuBar()
@@ -11,7 +13,7 @@ def setup_menu(window: "MainWindow"):
 	open_action.triggered.connect(window.open_directory)
 	file_menu.addAction(open_action)
 
-	recent_menu = QMenu("&Recent", file_menu)
+	recent_menu = RecentMenu(window,"&Recent", file_menu)
 	file_menu.addMenu(recent_menu)
 
 	file_menu.addSeparator()

@@ -1,4 +1,4 @@
-from PyQt6.QtCore import QItemSelectionRange, Qt, QSize, pyqtSignal, QRect, QSettings
+from PyQt6.QtCore import QItemSelectionRange, Qt, QSize, pyqtSignal, QRect, QSettings, QObject
 from PyQt6.QtGui import QAction, QKeySequence, QIcon, QShortcut, QCloseEvent
 from PyQt6.QtWidgets import QMainWindow, QFileDialog, QDockWidget, QMenu, QHBoxLayout, QWidget
 
@@ -111,15 +111,12 @@ class MainWindow(QMainWindow):
 		# Set initial state for widgets, etc.
 
 		self.tag_editor.line_edit.setEnabled(False) # enabled once something is loaded
-		self.recent_menu.setEnabled(False) # enabled when there are previously opened locations
 
 		# Restore window geometry
+
 		if Config.read(Setting.RestoreLayout):
 			self.restoreGeometry(Config.read(Setting.LayoutGeometry))
 			self.restoreState(Config.read(Setting.LayoutState))
-
-		# Auto load image directory for testing
-		self.open_directory()
 
 	def add_tag(self):
 		editor = self.tag_editor.line_edit
@@ -171,15 +168,22 @@ class MainWindow(QMainWindow):
 		self.current_image = image
 		self.update_dynamic_labels()
 
-	def open_directory(self):
+	def on_open_recent(self):
+		action: QAction = self.sender()
+		if action:
+			path = action.data()
+			self.open_directory(path)
+
+	def open_directory(self, path: str | None = None):
 		"""Open directory dialog and load images"""
 
-		path = QFileDialog.getExistingDirectory(
-			self,
-			"Select Directory",
-			"",
-			QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks
-		)
+		if not path:
+			path = QFileDialog.getExistingDirectory(
+				self,
+				"Select Directory",
+				"",
+				QFileDialog.Option.ShowDirsOnly | QFileDialog.Option.DontResolveSymlinks
+			)
 
 		if not path:
 			return
@@ -189,6 +193,8 @@ class MainWindow(QMainWindow):
 		self.directory_image_model.setDirectory(directory)
 		self.directory_tag_model.load(directory)
 		self.tag_editor.line_edit.setEnabled(True)
+
+		self.recent_menu.add_entry(path)
 
 		self.reset_views()
 		self.current_directory = directory
