@@ -67,4 +67,5 @@ def setup_menu(window: "MainWindow"):
 	# Create references
 
 	window.recent_menu = recent_menu
+	window.unified_dock_action = unified_tag_dock_action
 

@@ -1,19 +1,19 @@
-from PyQt6.QtCore import QItemSelectionRange, Qt, QSize, pyqtSignal, QRect, QSettings, QObject
-from PyQt6.QtGui import QAction, QKeySequence, QIcon, QShortcut, QCloseEvent
-from PyQt6.QtWidgets import QMainWindow, QFileDialog, QDockWidget, QMenu, QHBoxLayout, QWidget
+from PyQt6.QtCore import QItemSelectionRange, Qt, QSize, pyqtSignal
+from PyQt6.QtGui import QAction, QKeySequence, QShortcut, QCloseEvent
+from PyQt6.QtWidgets import QMainWindow, QFileDialog, QDockWidget, QHBoxLayout, QWidget
 
-from src.directory_tag_model import DirectoryTagModel
-from src.float_dock_widget import FloatDockWidget
-from src.image_tag_model import ImageTagModel
-from src.image import Image
+from src.config import Config, Setting
 from src.directory import Directory
 from src.directory_image_model import DirectoryImageModel
+from src.directory_tag_model import DirectoryTagModel
+from src.image import Image
+from src.image_tag_model import ImageTagModel
 from src.main_menu import setup_menu
 from src.panels.image_selector import ImageSelector
 from src.panels.image_viewer import ImageViewer
 from src.panels.tag_editor import TagEditor
 from src.panels.tag_index import TagIndex
-from src.config import Config, Setting
+from src.panels.unified_tagger import UnifiedTagger
 
 
 class MainWindow(QMainWindow):
@@ -35,41 +35,27 @@ class MainWindow(QMainWindow):
 			QMainWindow.DockOption.AnimatedDocks
 		)
 
-		self.image_viewer = ImageViewer()
-		self.image_selector = ImageSelector()
-		self.tag_editor = TagEditor()
-		self.tag_index = TagIndex()
+		self.image_selector = ImageSelector("Image Selector")
+		self.image_viewer = ImageViewer("Image Viewer")
+		self.tag_editor = TagEditor("Tag Editor")
+		self.tag_index = TagIndex("Tag Index")
+		self.unified_tagger = UnifiedTagger("Tags")
 
-		self.image_selector_dock = QDockWidget("Image Selector")
-		self.image_selector_dock.setObjectName("image_selector_dock")
-		self.image_selector_dock.setWidget(self.image_selector)
-		self.image_viewer_dock = FloatDockWidget("Image Viewer")
-		self.image_viewer_dock.setObjectName("image_viewer_dock")
-		self.image_viewer_dock.setWidget(self.image_viewer)
-		self.tag_editor_dock = FloatDockWidget("Tag Editor")
-		self.tag_editor_dock.setObjectName("tag_editor_dock")
-		self.tag_editor_dock.setWidget(self.tag_editor)
-		self.tag_index_dock = FloatDockWidget("Tag Index")
-		self.tag_index_dock.setObjectName("tag_index_dock")
-		self.tag_index_dock.setWidget(self.tag_index)
-		self.unified_tag_dock = QDockWidget("Tags")
-		self.unified_tag_dock.setObjectName("unified_tag_dock")
+		self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.image_selector)
+		self.splitDockWidget(self.image_selector, self.image_viewer, Qt.Orientation.Horizontal)
+		self.splitDockWidget(self.image_viewer, self.tag_editor, Qt.Orientation.Horizontal)
+		self.splitDockWidget(self.tag_editor, self.tag_index, Qt.Orientation.Horizontal)
 
-		self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.image_selector_dock)
-		self.splitDockWidget(self.image_selector_dock, self.image_viewer_dock, Qt.Orientation.Horizontal)
-		self.splitDockWidget(self.image_viewer_dock, self.tag_editor_dock, Qt.Orientation.Horizontal)
-		self.splitDockWidget(self.tag_editor_dock, self.tag_index_dock, Qt.Orientation.Horizontal)
-
-		self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.unified_tag_dock)
-		self.unified_tag_dock.hide()
+		self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.unified_tagger)
+		self.unified_tagger.hide()
 
 		self.setCentralWidget(None)
 		self.resizeDocks(
 			[
-				self.image_selector_dock,
-				self.image_viewer_dock,
-				self.tag_editor_dock,
-				self.tag_index_dock
+				self.image_selector,
+				self.image_viewer,
+				self.tag_editor,
+				self.tag_index
 			],
 			[2, 2, 1, 1],
 			Qt.Orientation.Horizontal
@@ -88,58 +74,38 @@ class MainWindow(QMainWindow):
 		self.image_tag_model = ImageTagModel()
 
 		self.image_selector.listview.setModel(self.directory_image_model)
-		self.tag_editor.list_view.setModel(self.image_tag_model)
-		self.tag_index.listview.setModel(self.directory_tag_model)
+		self.tag_editor.set_model(self.image_tag_model)
+		self.tag_index.set_model(self.directory_tag_model)
+		self.unified_tagger.set_models(self.image_tag_model, self.directory_tag_model)
 
 		# Create interface shortcuts
 
-		delete_shortcut = QShortcut(QKeySequence.StandardKey.Delete, self.tag_editor.list_view)
+		#delete_shortcut = QShortcut(QKeySequence.StandardKey.Delete, self.tag_editor.list_view)
 		next_image_shortcut = QShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_N), self)
 		prev_image_shortcut = QShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_P), self)
 
 		# Connect signals
 
-		delete_shortcut.activated.connect(self.delete_selected_item)
+		#delete_shortcut.activated.connect(self.delete_selected_item)
 		next_image_shortcut.activated.connect(self.select_next_image)
 		prev_image_shortcut.activated.connect(self.select_prev_image)
 		self.image_loaded.connect(self.directory_tag_model.on_image_loaded)
 		self.image_selector.listview.selectionModel().selectionChanged.connect(self.display_image)
 		self.image_tag_model.image_tags_modified.connect(self.directory_image_model.on_image_tags_modified)
 		self.image_tag_model.image_tags_modified.connect(self.directory_tag_model.on_image_tags_modified)
-		self.tag_editor.line_edit.returnPressed.connect(self.add_tag)
+		self.tag_editor.data_changed.connect(self.update_dynamic_labels)
+		self.unified_tagger.data_changed.connect(self.update_dynamic_labels)
 
-		# Set initial state for widgets, etc.
-
-		self.tag_editor.line_edit.setEnabled(False) # enabled once something is loaded
-
-		# Restore window geometry
+		# Restore window geometry and state
 
 		if Config.read(Setting.RestoreLayout):
 			self.restoreGeometry(Config.read(Setting.LayoutGeometry))
 			self.restoreState(Config.read(Setting.LayoutState))
-
-	def add_tag(self):
-		editor = self.tag_editor.line_edit
-		text = editor.text().strip()
-		if not text:
-			return
-
-		indexes = self.tag_editor.list_view.selectedIndexes()
-		if len(indexes) > 0:
-			index = indexes[0]
-			self.image_tag_model.insert_tag(text, index.row())
-			self.tag_editor.list_view.setCurrentIndex(index)
-		else:
-			self.image_tag_model.append_tag(text)
-
-		editor.clear()
-		self.update_dynamic_labels()
+			self.unified_dock_action.setChecked(Config.read(Setting.UnifiedTagDock))
 
 	def reset_views(self):
 		"""Clears viewer, tag editor, etc. after loading a directory, for example."""
-		model: ImageTagModel | None = self.tag_editor.list_view.model()
-		if model is not None:
-			model.clear()
+		self.tag_editor.clear_model()
 
 		self.current_image = None
 
@@ -152,7 +118,7 @@ class MainWindow(QMainWindow):
 
 		self.update_dynamic_labels()
 
-	def display_image(self, selected_items: QItemSelectionRange, deselected_items):
+	def display_image(self, selected_items: QItemSelectionRange, deselected_items: QItemSelectionRange):
 		"""Display selected image in graphics view"""
 
 		if not selected_items:
@@ -192,7 +158,6 @@ class MainWindow(QMainWindow):
 
 		self.directory_image_model.setDirectory(directory)
 		self.directory_tag_model.load(directory)
-		self.tag_editor.line_edit.setEnabled(True)
 
 		self.recent_menu.add_entry(path)
 
@@ -226,46 +191,37 @@ class MainWindow(QMainWindow):
 			editor_width = self.tag_editor.width()
 			index_width = self.tag_index.width()
 
-			self.tag_editor_dock.hide()
-			self.tag_index_dock.hide()
-
-			layout = QHBoxLayout()
-			layout.setContentsMargins(0, 0, 0, 0)
-			layout.setSpacing(0)
-			layout.addWidget(self.tag_editor, 1)
-			layout.addWidget(self.tag_index, 1)
-
-			widget = QWidget()
-			widget.setLayout(layout)
-
-			self.unified_tag_dock.setWidget(widget)
+			self.tag_editor.hide()
+			self.tag_index.hide()
 
 			self.resizeDocks(
-				[self.image_selector_dock, self.image_viewer_dock, self.unified_tag_dock],
+				[self.image_selector, self.image_viewer, self.unified_tagger],
 				[selector_width, viewer_width, editor_width + index_width],
 				Qt.Orientation.Horizontal
 			)
 
-			self.unified_tag_dock.show()
+			self.unified_tagger.show()
 		else:
-			self.unified_tag_dock.hide()
-			self.tag_editor_dock.setWidget(self.tag_editor)
-			self.tag_index_dock.setWidget(self.tag_index)
-			self.tag_editor_dock.show()
-			self.tag_index_dock.show()
+			self.unified_tagger.hide()
+			self.tag_editor.show()
+			self.tag_index.show()
 
 	def update_dynamic_labels(self):
 		if self.current_image:
 			image_viewer_title = self.current_image.path.name
 			tag_editor_title = "Image Tags ({})".format(len(self.current_image.tags))
 			unified_tag_title = "Tags ({}/{})".format(len(self.current_image.tags), len(self.directory_tag_model.tag_map))
+			self.tag_editor.set_input_enabled(True)
+			self.unified_tagger.set_input_enabled(True)
 		else:
 			image_viewer_title = "Viewer"
 			tag_editor_title = "Image Tags"
 			unified_tag_title = "Tags"
 			self.image_selector.listview.selectionModel().clear()
 			self.image_viewer.gfx_view.scene().clear()
-			self.tag_editor.line_edit.clear()
+			self.tag_editor.clear_input()
+			self.tag_editor.set_input_enabled(False)
+			self.unified_tagger.set_input_enabled(False)
 
 		if self.current_directory:
 			window_title = str(self.current_directory.path)
@@ -273,13 +229,14 @@ class MainWindow(QMainWindow):
 			window_title = None
 
 		self.setWindowTitle(window_title)
-		self.image_viewer_dock.setWindowTitle(image_viewer_title)
-		self.tag_editor_dock.setWindowTitle(tag_editor_title)
-		self.unified_tag_dock.setWindowTitle(unified_tag_title)
+		self.image_viewer.setWindowTitle(image_viewer_title)
+		self.tag_editor.setWindowTitle(tag_editor_title)
+		self.unified_tagger.setWindowTitle(unified_tag_title)
 
-		self.tag_index_dock.setWindowTitle("Directory Tags ({})".format(len(self.directory_tag_model.tag_map)))
+		self.tag_index.setWindowTitle("Directory Tags ({})".format(len(self.directory_tag_model.tag_map)))
 
 	def closeEvent(self, event: QCloseEvent | None):
 		if Config.read(Setting.RestoreLayout):
 			Config.write(Setting.LayoutGeometry, self.saveGeometry())
 			Config.write(Setting.LayoutState, self.saveState())
+			Config.write(Setting.UnifiedTagDock, self.unified_dock_action.isChecked())

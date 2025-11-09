@@ -36,11 +36,35 @@ class Config:
 
 	@staticmethod
 	def read(entry: Setting):
-		return Config._manager.value(entry.value.key, entry.value.default)
+		value = Config._manager.value(entry.value.key, entry.value.default)
+		type_of = type(entry.value.default)
+		if type_of is bool:
+			return Config.str_to_bool(value)
+		else:
+			return value
 
 	@staticmethod
 	def reset(entry: Setting):
 		Config._manager.remove(entry.value.key)
+
+	@staticmethod
+	def str_to_bool(string: str):
+		mapping = {
+			"true": True,
+			"false": False,
+			"1": True,
+			"0": False,
+			"yes": True,
+			"no": False,
+
+			"none": False,
+		}
+
+		value = mapping.get(string.lower())
+		if value is not None:
+			return value
+		else:
+			return False
 
 	@staticmethod
 	def write(entry: Setting, value):

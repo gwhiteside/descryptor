@@ -1,15 +1,17 @@
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSlider, QComboBox, QSizePolicy
+from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QSlider, QComboBox, QSizePolicy, QDockWidget, QWidget
 
 from src.graphics_view import GraphicsView
 
 
-class ImageViewer(QWidget):
+class ImageViewer(QDockWidget):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.setObjectName("image_viewer")
 
-		main_vbox = QVBoxLayout()
+		main_widget = QWidget()
+		vbox = QVBoxLayout()
+		main_widget.setLayout(vbox)
 
 		self.gfx_view = GraphicsView()
 
@@ -20,7 +22,7 @@ class ImageViewer(QWidget):
 		controls_hbox.addWidget(self.zoom_slider)
 		controls_hbox.addWidget(self.zoom_cbox)
 
-		main_vbox.addWidget(self.gfx_view)
-		main_vbox.addLayout(controls_hbox)
+		vbox.addWidget(self.gfx_view)
+		vbox.addLayout(controls_hbox)
 
-		self.setLayout(main_vbox)
+		self.setWidget(main_widget)
