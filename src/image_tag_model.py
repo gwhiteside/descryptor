@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from PyQt6.QtCore import QAbstractItemModel, QAbstractListModel, Qt, QModelIndex, pyqtSignal
 from PyQt6.QtGui import QBrush, QColor
 
+from src.config import Config, Setting
 from src.image import Image
 
 class ImageTagModel(QAbstractListModel):
@@ -15,6 +16,7 @@ class ImageTagModel(QAbstractListModel):
 		super().__init__()
 		self.image = image
 		self.changed_background = QBrush(QColor(128, 0, 0, 50))
+		self.changed_color = QColor(Config.read(Setting.ModifiedColor))
 
 	def append_tag(self, tag: str):
 		"""Adds ``tag`` to end of the list."""
@@ -97,7 +99,7 @@ class ImageTagModel(QAbstractListModel):
 			case q.EditRole:
 				return tag.text
 			case q.ForegroundRole:
-				return QColor("red") if tag.modified else None
+				return self.changed_color if tag.modified else None
 			case _:
 				return None
 

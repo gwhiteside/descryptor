@@ -2,6 +2,7 @@ from PyQt6.QtCore import QAbstractListModel, Qt, QModelIndex, QThreadPool, QSize
 from PyQt6.QtGui import QBrush, QColor, QFont, QIcon, QPixmap
 from PyQt6.QtWidgets import QApplication
 
+from src.config import Config, Setting
 from src.image import Image
 from src.directory import Directory
 from src.thumbnail_task import ThumbnailLoader, ThumbnailTask
@@ -11,7 +12,7 @@ class DirectoryImageModel(QAbstractListModel):
 	def __init__(self, directory: Directory | None = None):
 		super().__init__()
 		self.directory: Directory | None = None
-		self.changed_background = QBrush(QColor(255, 0, 0, 50))
+		self.changed_background = QColor(Config.read(Setting.ModifiedColor))
 		self.changed_font = QFont(None, -1, -1, True)
 		self.loading_icon = QIcon.fromTheme(QIcon.ThemeIcon.ImageLoading)
 

@@ -20,6 +20,9 @@ class Setting(Enum):
 
 	RecentDirectories = Entry("Recent/directories", [])
 
+	ModifiedColor = Entry("Colors/modified_color", "#CC3333")
+	IndexMatchColor = Entry("Colors/index_match_color", "#33CC33")
+
 class Config:
 	_manager = QSettings(APP_NAME, APP_NAME)
 
@@ -35,9 +38,14 @@ class Config:
 				Config._manager.setValue(key, setting.value.default)
 
 	@staticmethod
-	def read(entry: Setting):
-		value = Config._manager.value(entry.value.key, entry.value.default)
-		type_of = type(entry.value.default)
+	def read(entry: Setting | str):
+		if isinstance(entry, Setting):
+			value = Config._manager.value(entry.value.key, entry.value.default)
+			type_of = type(entry.value.default)
+		else:
+			value = Config._manager.value(entry, None)
+			type_of = str
+
 		if type_of is bool:
 			return Config.str_to_bool(value)
 		else:
@@ -67,5 +75,8 @@ class Config:
 			return False
 
 	@staticmethod
-	def write(entry: Setting, value):
-		Config._manager.setValue(entry.value.key, value)
+	def write(entry: Setting | str, value):
+		if isinstance(entry, Setting):
+			Config._manager.setValue(entry.value.key, value)
+		else:
+			Config._manager.setValue(entry, value)
