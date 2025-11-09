@@ -3,6 +3,7 @@ from collections import Counter
 from PyQt6.QtCore import QAbstractItemModel, QAbstractListModel, QModelIndex, Qt
 from PyQt6.QtGui import QColor, QFont
 
+from src.config import Config, Setting
 from src.image_tag_model import ImageTagModel
 from src.image import Image
 from src.directory import Directory
@@ -15,6 +16,7 @@ class DirectoryTagModel(QAbstractListModel):
 		self.current_image: Image | None = None
 		self.tag_map: dict[str, list[Image]] = {} # inverted index of tags to TagImages
 		self.__view_cache: list[str] = [] # cached sorted tags (with values) from tag_map
+		self.match_color = QColor(Config.read(Setting.IndexMatchColor))
 		self.load(directory)
 
 	def load(self, directory: Directory):
@@ -90,7 +92,7 @@ class DirectoryTagModel(QAbstractListModel):
 			testfont.setBold(True)
 			return testfont if tag in list(map(str, self.current_image.tags)) else QFont() # TODO cache a list in the Image class
 		if role == q.ForegroundRole:
-			return QColor("green") if tag in list(map(str, self.current_image.tags)) else None # TODO cache a list in the Image class
+			return self.match_color if tag in list(map(str, self.current_image.tags)) else None # TODO cache a list in the Image class
 
 		return None
 
