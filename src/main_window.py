@@ -80,13 +80,11 @@ class MainWindow(QMainWindow):
 
 		# Create interface shortcuts
 
-		#delete_shortcut = QShortcut(QKeySequence.StandardKey.Delete, self.tag_editor.list_view)
 		next_image_shortcut = QShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_N), self)
 		prev_image_shortcut = QShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_P), self)
 
 		# Connect signals
 
-		#delete_shortcut.activated.connect(self.delete_selected_item)
 		next_image_shortcut.activated.connect(self.select_next_image)
 		prev_image_shortcut.activated.connect(self.select_prev_image)
 		self.image_loaded.connect(self.directory_tag_model.on_image_loaded)
@@ -94,6 +92,7 @@ class MainWindow(QMainWindow):
 		self.image_tag_model.image_tags_modified.connect(self.directory_image_model.on_image_tags_modified)
 		self.image_tag_model.image_tags_modified.connect(self.directory_tag_model.on_image_tags_modified)
 		self.tag_editor.data_changed.connect(self.update_dynamic_labels)
+		self.tag_index.data_changed.connect(self.update_dynamic_labels)
 		self.unified_tagger.data_changed.connect(self.update_dynamic_labels)
 
 		# Restore window geometry and state
@@ -108,15 +107,6 @@ class MainWindow(QMainWindow):
 		self.tag_editor.clear_model()
 
 		self.current_image = None
-
-	def delete_selected_item(self):
-		indexes = self.tag_editor.list_view.selectedIndexes()
-		if indexes:
-			index = indexes[0]
-			row = index.row()
-			self.image_tag_model.remove_tag_at(row)
-
-		self.update_dynamic_labels()
 
 	def display_image(self, selected_items: QItemSelectionRange, deselected_items: QItemSelectionRange):
 		"""Display selected image in graphics view"""

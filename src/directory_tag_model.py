@@ -42,7 +42,10 @@ class DirectoryTagModel(QAbstractListModel):
 			if images:
 				images.remove(image)
 				if not images:
+					index = self.__view_cache.index(tag)
+					self.beginRemoveRows(QModelIndex(), index, index)
 					del self.tag_map[tag]
+					self.endRemoveRows()
 
 		# could optimize a bit, but rebuilding the whole mostly-sorted cache is fine
 		# TODO determine correct specific row to update, or specific insert/remove row update

@@ -1,8 +1,9 @@
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtGui import QShowEvent, QHideEvent
+from PyQt6.QtGui import QShowEvent, QHideEvent, QShortcut, QKeySequence
 from PyQt6.QtWidgets import QListView, QVBoxLayout, QLineEdit, QDockWidget, QWidget
 
 from src.image_tag_model import ImageTagModel
+from src.panels.swap_dock import SwapDock
 
 
 class TagEditorWidget(QWidget):
@@ -21,6 +22,8 @@ class TagEditorWidget(QWidget):
 		vbox.addWidget(self.list_view)
 
 		self.line_edit.returnPressed.connect(self.add_tag)
+		delete_shortcut = QShortcut(QKeySequence.StandardKey.Delete, self.list_view)
+		delete_shortcut.activated.connect(self.delete_selected_item)
 
 	def add_tag(self):
 		text = self.line_edit.text().strip()
@@ -38,8 +41,14 @@ class TagEditorWidget(QWidget):
 
 		self.line_edit.clear()
 
+	def delete_selected_item(self):
+		indexes = self.list_view.selectedIndexes()
+		if indexes:
+			index = indexes[0]
+			row = index.row()
+			self.list_view.model().remove_tag_at(row)
+
 	def on_data_changed(self):
-		print("child on_data_changed")
 		self.data_changed.emit()
 
 	def set_model(self, model):
@@ -55,13 +64,9 @@ class TagEditorWidget(QWidget):
 		model.rowsRemoved.connect(self.on_data_changed)
 
 
-class TagEditor(QDockWidget):
-	data_changed = pyqtSignal()
-
+class TagEditor(SwapDock):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-
-		self.signals_connected = False
 
 		self.setObjectName("tag_editor")
 		self.tag_editor_widget = TagEditorWidget()
@@ -77,22 +82,6 @@ class TagEditor(QDockWidget):
 		if model is not None:
 			model.clear()
 
-	def connect_signals(self):
-		if not self.signals_connected:
-			print(self.objectName() + " signal connected")
-			self.tag_editor_widget.data_changed.connect(self.on_data_changed)
-			self.signals_connected = True
-
-	def disconnect_signals(self):
-		if self.signals_connected:
-			print(self.objectName() + " signal disconnected")
-			self.tag_editor_widget.data_changed.disconnect(self.on_data_changed)
-			self.signals_connected = False
-
-	def on_data_changed(self):
-		print(self.objectName() + " on_data_changed")
-		self.data_changed.emit()
-
 	def set_input_enabled(self, enabled: bool):
 		self.tag_editor_widget.line_edit.setEnabled(enabled)
 
@@ -101,8 +90,5 @@ class TagEditor(QDockWidget):
 
 	# Overrides
 
-	def hideEvent(self, event: QHideEvent):
-		self.disconnect_signals()
-
-	def showEvent(self, event: QShowEvent):
-		self.connect_signals()
+	def forward_sources(self):
+		return [self.tag_editor_widget]

@@ -2,6 +2,7 @@ from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QListView, QVBoxLayout, QWidget, QDockWidget
 
 from src.directory_image_model import DirectoryImageModel
+from src.panels.swap_dock import SwapDock
 
 
 class TagIndexWidget(QWidget):
@@ -32,7 +33,7 @@ class TagIndexWidget(QWidget):
 		model.rowsInserted.connect(self.on_data_changed)
 		model.rowsRemoved.connect(self.on_data_changed)
 
-class TagIndex(QDockWidget):
+class TagIndex(SwapDock):
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 
@@ -47,3 +48,8 @@ class TagIndex(QDockWidget):
 
 	def set_model(self, model):
 		self.tag_index_widget.set_model(model)
+
+	# Overrides
+
+	def forward_sources(self):
+		return [self.tag_index_widget]
