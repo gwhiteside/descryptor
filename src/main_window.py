@@ -86,8 +86,13 @@ class MainWindow(QMainWindow):
 		shortcut.create("next_image", self, self.select_next_image)
 		shortcut.create("previous_image", self, self.select_prev_image)
 
+		#next_image_shortcut = QShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_N), self)
+		#prev_image_shortcut = QShortcut(QKeySequence(Qt.Modifier.CTRL | Qt.Key.Key_P), self)
+
 		# Connect signals
 
+		#next_image_shortcut.activated.connect(self.select_next_image)
+		#prev_image_shortcut.activated.connect(self.select_prev_image)
 		self.image_loaded.connect(self.directory_tag_model.on_image_loaded)
 		self.image_selector.listview.selectionModel().selectionChanged.connect(self.display_image)
 		self.image_tag_model.image_tags_modified.connect(self.directory_image_model.on_image_tags_modified)
