@@ -42,14 +42,13 @@ class Config:
 		if isinstance(entry, Setting):
 			value = Config._manager.value(entry.value.key, entry.value.default)
 			type_of = type(entry.value.default)
+			if type_of is bool:
+				return Config.str_to_bool(value)
 		else:
 			value = Config._manager.value(entry, None)
 			type_of = str
 
-		if type_of is bool:
-			return Config.str_to_bool(value)
-		else:
-			return value
+		return value
 
 	@staticmethod
 	def reset(entry: Setting):
