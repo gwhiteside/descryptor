@@ -1,10 +1,10 @@
 from collections import Counter
 
-from PyQt6.QtCore import QAbstractItemModel, QAbstractListModel, QModelIndex, Qt
+from PyQt6.QtCore import QAbstractListModel, QModelIndex, Qt
 from PyQt6.QtGui import QColor, QFont
 
 from src.config import Config, Setting
-from src.image_tag_model import ImageTagModel
+from src.models.image_tag_model import ImageTagModel
 from src.image import Image
 from src.directory import Directory
 

@@ -1,13 +1,16 @@
-from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtGui import QShowEvent, QHideEvent, QShortcut, QKeySequence
-from PyQt6.QtWidgets import QListView, QVBoxLayout, QLineEdit, QDockWidget, QWidget
+from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtGui import QShortcut, QKeySequence
+from PyQt6.QtWidgets import QListView, QVBoxLayout, QLineEdit, QWidget, QCompleter
 
-from src.image_tag_model import ImageTagModel
+from src.completer import Completer
+from src.models.image_tag_model import ImageTagModel
+from src.models.tag_completer_model import TagCompleterModel
 from src.panels.swap_dock import SwapDock
 
 
 class TagEditorWidget(QWidget):
 	data_changed = pyqtSignal()
+	_completion_model: TagCompleterModel = None
 
 	def __init__(self, *args, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -20,6 +23,19 @@ class TagEditorWidget(QWidget):
 
 		vbox.addWidget(self.line_edit)
 		vbox.addWidget(self.list_view)
+
+		completer = Completer()
+		if TagEditorWidget._completion_model is None:
+			TagEditorWidget._completion_model = TagCompleterModel("data/danbooru.db")
+		completer.setModel(TagEditorWidget._completion_model)
+		completer.setModelSorting(QCompleter.ModelSorting.CaseInsensitivelySortedModel)
+		completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+		completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+		completer.setFilterMode(Qt.MatchFlag.MatchContains)
+		completer.set_min_chars(3)
+		#completer.setWidget(self.line_edit)
+
+		self.line_edit.setCompleter(completer)
 
 		self.line_edit.returnPressed.connect(self.add_tag)
 		delete_shortcut = QShortcut(QKeySequence.StandardKey.Delete, self.list_view)

@@ -1,7 +1,6 @@
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QListView, QVBoxLayout, QWidget, QDockWidget
+from PyQt6.QtWidgets import QListView, QVBoxLayout, QWidget
 
-from src.directory_image_model import DirectoryImageModel
 from src.panels.swap_dock import SwapDock
 
 

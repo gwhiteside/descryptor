@@ -1,13 +1,13 @@
 from PyQt6.QtCore import QItemSelectionRange, Qt, QSize, pyqtSignal
-from PyQt6.QtGui import QAction, QKeySequence, QShortcut, QCloseEvent
-from PyQt6.QtWidgets import QMainWindow, QFileDialog, QDockWidget, QHBoxLayout, QWidget
+from PyQt6.QtGui import QAction, QCloseEvent
+from PyQt6.QtWidgets import QMainWindow, QFileDialog
 
 from src.config import Config, Setting
 from src.directory import Directory
-from src.directory_image_model import DirectoryImageModel
-from src.directory_tag_model import DirectoryTagModel
+from src.models.directory_image_model import DirectoryImageModel
+from src.models.directory_tag_model import DirectoryTagModel
 from src.image import Image
-from src.image_tag_model import ImageTagModel
+from src.models.image_tag_model import ImageTagModel
 from src.main_menu import setup_menu
 from src.panels.image_selector import ImageSelector
 from src.panels.image_viewer import ImageViewer
@@ -15,7 +15,6 @@ from src.panels.tag_editor import TagEditor
 from src.panels.tag_index import TagIndex
 from src.panels.unified_tagger import UnifiedTagger
 from src.shortcut_manager import ShortcutManager
-from src.shortcuts import SHORTCUTS
 
 
 class MainWindow(QMainWindow):
