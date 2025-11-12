@@ -1,6 +1,6 @@
-from PyQt6.QtCore import pyqtSignal, Qt
+from PyQt6.QtCore import pyqtSignal, Qt, QSortFilterProxyModel, QModelIndex
 from PyQt6.QtGui import QShortcut, QKeySequence
-from PyQt6.QtWidgets import QListView, QVBoxLayout, QLineEdit, QWidget, QCompleter
+from PyQt6.QtWidgets import QListView, QVBoxLayout, QLineEdit, QWidget, QCompleter, QAbstractScrollArea
 
 from src.completer import Completer
 from src.models.image_tag_model import ImageTagModel
@@ -24,18 +24,34 @@ class TagEditorWidget(QWidget):
 		vbox.addWidget(self.line_edit)
 		vbox.addWidget(self.list_view)
 
-		completer = Completer()
 		if TagEditorWidget._completion_model is None:
 			TagEditorWidget._completion_model = TagCompleterModel("data/danbooru.db")
+		completer = QCompleter()
 		completer.setModel(TagEditorWidget._completion_model)
 		completer.setModelSorting(QCompleter.ModelSorting.CaseInsensitivelySortedModel)
-		completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
 		completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+		completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
 		completer.setFilterMode(Qt.MatchFlag.MatchContains)
-		completer.set_min_chars(3)
-		#completer.setWidget(self.line_edit)
+		completer.setMaxVisibleItems(10)
+		popup: QListView = completer.popup()
+		popup.setUniformItemSizes(True) # greatly increases responsiveness for free here
+		#popup.setMinimumSize
+		#popup.setLayoutMode(QListView.LayoutMode.Batched) # greatly increases responsiveness, but flickers
+		#popup.setBatchSize(100)
 
-		self.line_edit.setCompleter(completer)
+		#self.line_edit.setCompleter(completer) # don't forget to do this if not using on_text_edited hack
+
+		def on_text_edited(text):
+			"""Intended to restrict matching to minimum number of characters, but performance is
+			very good regardless, so it's a matter of taste now."""
+			if len(text) >= 1:
+				if self.line_edit.completer() is None:
+					self.line_edit.setCompleter(completer)
+			else:
+				if self.line_edit.completer() is not None:
+					self.line_edit.setCompleter(None)
+
+		self.line_edit.textEdited.connect(on_text_edited)
 
 		self.line_edit.returnPressed.connect(self.add_tag)
 		delete_shortcut = QShortcut(QKeySequence.StandardKey.Delete, self.list_view)

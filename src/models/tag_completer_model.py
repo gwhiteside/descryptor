@@ -15,7 +15,6 @@ class TagCompleterModel(QAbstractListModel):
 		self._db_path = db_path
 		self._connection: Connection | None = None
 		self._load_data()
-		print("data loaded")
 
 	def _connect_database(self):
 		if not os.path.exists(self._db_path):
@@ -36,7 +35,7 @@ class TagCompleterModel(QAbstractListModel):
 
 		try:
 			cursor = self._connection.cursor()
-			cursor.execute("SELECT name FROM tags ORDER BY name ASC")
+			cursor.execute("SELECT REPLACE(name, '_', ' ') AS name FROM tags ORDER BY name ASC")
 			self.layoutAboutToBeChanged.emit()
 			self._tags = [row["name"] for row in cursor.fetchall()]
 			self.layoutChanged.emit()
@@ -50,7 +49,7 @@ class TagCompleterModel(QAbstractListModel):
 	# Overrides
 
 	def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole):
-		if not index.isValid() or index.row() >= len(self._tags):
+		if not index.isValid() or index.row() >= self._tag_count:
 			return None
 
 		match role:
