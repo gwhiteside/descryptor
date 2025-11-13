@@ -2,19 +2,19 @@ from PyQt6.QtCore import QItemSelectionRange, Qt, QSize, pyqtSignal
 from PyQt6.QtGui import QAction, QCloseEvent
 from PyQt6.QtWidgets import QMainWindow, QFileDialog
 
-from src.config import Config, Setting
-from src.directory import Directory
-from src.models.directory_image_model import DirectoryImageModel
-from src.models.directory_tag_model import DirectoryTagModel
-from src.image import Image
-from src.models.image_tag_model import ImageTagModel
-from src.main_menu import setup_menu
-from src.panels.image_selector import ImageSelector
-from src.panels.image_viewer import ImageViewer
-from src.panels.tag_editor import TagEditor
-from src.panels.tag_index import TagIndex
-from src.panels.unified_tagger import UnifiedTagger
-from src.shortcut_manager import ShortcutManager
+from settings.config import Config, Setting
+from models.directory import Directory
+from models.directory_image_model import DirectoryImageModel
+from models.tag_index_model import TagIndexModel
+from models.image import Image
+from models.image_tag_model import ImageTagModel
+from gui.main_menu import setup_menu
+from gui.image_selector import ImageSelector
+from gui.image_viewer import ImageViewer
+from gui.tag_editor import TagEditor
+from gui.tag_index import TagIndex
+from gui.unified_tagger import UnifiedTagger
+from settings.shortcut_manager import ShortcutManager
 
 
 class MainWindow(QMainWindow):
@@ -71,13 +71,13 @@ class MainWindow(QMainWindow):
 		# Set models
 
 		self.directory_image_model = DirectoryImageModel()
-		self.directory_tag_model = DirectoryTagModel()
+		self.tag_index_model = TagIndexModel()
 		self.image_tag_model = ImageTagModel()
 
 		self.image_selector.listview.setModel(self.directory_image_model)
 		self.tag_editor.set_model(self.image_tag_model)
-		self.tag_index.set_model(self.directory_tag_model)
-		self.unified_tagger.set_models(self.image_tag_model, self.directory_tag_model)
+		self.tag_index.set_model(self.tag_index_model)
+		self.unified_tagger.set_models(self.image_tag_model, self.tag_index_model)
 
 		# Create interface shortcuts
 
@@ -87,10 +87,10 @@ class MainWindow(QMainWindow):
 
 		# Connect signals
 
-		self.image_loaded.connect(self.directory_tag_model.on_image_loaded)
+		self.image_loaded.connect(self.tag_index_model.on_image_loaded)
 		self.image_selector.listview.selectionModel().selectionChanged.connect(self.display_image)
 		self.image_tag_model.image_tags_modified.connect(self.directory_image_model.on_image_tags_modified)
-		self.image_tag_model.image_tags_modified.connect(self.directory_tag_model.on_image_tags_modified)
+		self.image_tag_model.image_tags_modified.connect(self.tag_index_model.on_image_tags_modified)
 		self.tag_editor.data_changed.connect(self.update_dynamic_labels)
 		self.tag_index.data_changed.connect(self.update_dynamic_labels)
 		self.unified_tagger.data_changed.connect(self.update_dynamic_labels)
@@ -147,7 +147,7 @@ class MainWindow(QMainWindow):
 		directory = Directory(path)
 
 		self.directory_image_model.setDirectory(directory)
-		self.directory_tag_model.load(directory)
+		self.tag_index_model.load(directory)
 
 		self.recent_menu.add_entry(path)
 
@@ -200,7 +200,7 @@ class MainWindow(QMainWindow):
 		if self.current_image:
 			image_viewer_title = self.current_image.path.name
 			tag_editor_title = "Image Tags ({})".format(len(self.current_image.tags))
-			unified_tag_title = "Tags ({}/{})".format(len(self.current_image.tags), len(self.directory_tag_model.tag_map))
+			unified_tag_title = "Tags ({}/{})".format(len(self.current_image.tags), len(self.tag_index_model.tag_map))
 			self.tag_editor.set_input_enabled(True)
 			self.unified_tagger.set_input_enabled(True)
 		else:
@@ -223,7 +223,7 @@ class MainWindow(QMainWindow):
 		self.tag_editor.setWindowTitle(tag_editor_title)
 		self.unified_tagger.setWindowTitle(unified_tag_title)
 
-		self.tag_index.setWindowTitle("Directory Tags ({})".format(len(self.directory_tag_model.tag_map)))
+		self.tag_index.setWindowTitle("Directory Tags ({})".format(len(self.tag_index_model.tag_map)))
 
 	def closeEvent(self, event: QCloseEvent | None):
 		if Config.read(Setting.RestoreLayout):

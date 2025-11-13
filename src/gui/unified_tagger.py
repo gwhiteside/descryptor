@@ -2,9 +2,9 @@ from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtGui import QHideEvent, QShowEvent
 from PyQt6.QtWidgets import QDockWidget, QWidget, QHBoxLayout
 
-from src.panels.swap_dock import SwapDock
-from src.panels.tag_editor import TagEditorWidget
-from src.panels.tag_index import TagIndexWidget
+from gui.swap_dock import SwapDock
+from gui.tag_editor import TagEditorWidget
+from gui.tag_index import TagIndexWidget
 
 
 class UnifiedTagger(SwapDock):

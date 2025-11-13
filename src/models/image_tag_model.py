@@ -1,11 +1,10 @@
 from collections import Counter
-from dataclasses import dataclass, field
 
-from PyQt6.QtCore import QAbstractItemModel, QAbstractListModel, Qt, QModelIndex, pyqtSignal
+from PyQt6.QtCore import QAbstractListModel, Qt, QModelIndex, pyqtSignal
 from PyQt6.QtGui import QBrush, QColor
 
-from src.config import Config, Setting
-from src.image import Image
+from settings.config import Config, Setting
+from models.image import Image
 
 class ImageTagModel(QAbstractListModel):
 	image_tags_modified = pyqtSignal(Image, Counter, Counter)

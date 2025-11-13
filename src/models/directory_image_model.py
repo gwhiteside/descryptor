@@ -1,11 +1,10 @@
-from PyQt6.QtCore import QAbstractListModel, Qt, QModelIndex, QThreadPool, QSize
-from PyQt6.QtGui import QBrush, QColor, QFont, QIcon, QPixmap
-from PyQt6.QtWidgets import QApplication
+from PyQt6.QtCore import QAbstractListModel, Qt, QModelIndex, QThreadPool
+from PyQt6.QtGui import QColor, QFont, QIcon
 
-from src.config import Config, Setting
-from src.image import Image
-from src.directory import Directory
-from src.thumbnail_task import ThumbnailLoader, ThumbnailTask
+from settings.config import Config, Setting
+from models.image import Image
+from models.directory import Directory
+from gui.thumbnail_task import ThumbnailLoader, ThumbnailTask
 
 
 class DirectoryImageModel(QAbstractListModel):

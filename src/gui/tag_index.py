@@ -1,7 +1,7 @@
 from PyQt6.QtCore import pyqtSignal
 from PyQt6.QtWidgets import QListView, QVBoxLayout, QWidget
 
-from src.panels.swap_dock import SwapDock
+from gui.swap_dock import SwapDock
 
 
 class TagIndexWidget(QWidget):

@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from src.image import Image
+from models.image import Image
+
 
 class Directory:
 	image_extensions = {

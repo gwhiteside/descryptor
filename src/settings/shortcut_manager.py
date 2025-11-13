@@ -1,8 +1,8 @@
 from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import QWidget
 
-from src.config import Config
-from src.shortcuts import SHORTCUTS
+from settings.config import Config
+from settings.shortcuts import SHORTCUTS
 
 
 class ShortcutManager:

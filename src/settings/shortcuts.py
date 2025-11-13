@@ -1,7 +1,4 @@
-from PyQt6.QtGui import QKeySequence, QShortcut
-from PyQt6.QtWidgets import QWidget
-
-from src.config import Config
+from PyQt6.QtGui import QKeySequence
 
 
 SHORTCUTS = {

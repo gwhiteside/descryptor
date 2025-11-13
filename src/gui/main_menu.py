@@ -1,7 +1,7 @@
 from PyQt6.QtGui import QAction, QIcon, QKeySequence
-from PyQt6.QtWidgets import QMenu, QMainWindow, QMenuBar
+from PyQt6.QtWidgets import QMenuBar
 
-from src.recent_menu import RecentMenu
+from gui.recent_menu import RecentMenu
 
 
 def setup_menu(window: "MainWindow"):

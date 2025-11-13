@@ -1,7 +1,7 @@
-from PyQt6.QtCore import QObject, pyqtSignal, QRunnable, pyqtSlot, Qt
+from PyQt6.QtCore import QObject, pyqtSignal, QRunnable, pyqtSlot
 from PyQt6.QtGui import QImage
 
-from src.image import Image
+from models.image import Image
 
 
 class ImageLoader(QObject):

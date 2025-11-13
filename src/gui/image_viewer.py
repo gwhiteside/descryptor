@@ -1,7 +1,7 @@
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QVBoxLayout, QHBoxLayout, QSlider, QComboBox, QSizePolicy, QDockWidget, QWidget
 
-from src.graphics_view import GraphicsView
+from gui.graphics_view import GraphicsView
 
 
 class ImageViewer(QDockWidget):

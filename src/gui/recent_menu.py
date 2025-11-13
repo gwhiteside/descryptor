@@ -3,7 +3,7 @@ from pathlib import Path
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QMenu, QWidget
 
-from src.config import Config, Setting
+from settings.config import Config, Setting
 
 
 class RecentMenu(QMenu):

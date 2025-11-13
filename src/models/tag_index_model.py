@@ -3,13 +3,13 @@ from collections import Counter
 from PyQt6.QtCore import QAbstractListModel, QModelIndex, Qt
 from PyQt6.QtGui import QColor, QFont
 
-from src.config import Config, Setting
-from src.models.image_tag_model import ImageTagModel
-from src.image import Image
-from src.directory import Directory
+from settings.config import Config, Setting
+from models.image_tag_model import ImageTagModel
+from models.image import Image
+from models.directory import Directory
 
 
-class DirectoryTagModel(QAbstractListModel):
+class TagIndexModel(QAbstractListModel):
 	def __init__(self, directory: Directory | None = None):
 		super().__init__()
 		self.directory = None

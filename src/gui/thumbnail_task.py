@@ -1,9 +1,7 @@
-from pathlib import Path
-
 from PyQt6.QtCore import QRunnable, QObject, pyqtSignal, pyqtSlot, Qt, QPoint, QRect, QSize
-from PyQt6.QtGui import QPixmap, QIcon, QImage
+from PyQt6.QtGui import QImage
 
-from src.image import Image
+from models.image import Image
 
 
 class ThumbnailLoader(QObject):

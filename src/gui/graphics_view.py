@@ -3,8 +3,8 @@ from PyQt6.QtCore import Qt, QSize, QThreadPool
 from PyQt6.QtGui import QWheelEvent, QPixmap, QImage, QPainter
 from PyQt6.QtWidgets import QGraphicsView, QGraphicsScene
 
-from src.image import Image
-from src.image_task import ImageLoader, ImageTask
+from models.image import Image
+from gui.image_task import ImageLoader, ImageTask
 
 
 class GraphicsView(QGraphicsView):
