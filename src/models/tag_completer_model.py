@@ -17,7 +17,6 @@ class TagCompleterModel(QAbstractTableModel):
 	def __init__(self, db_path: str | PathLike):
 		super().__init__()
 		self._data: list[tuple[str, str]] = []
-		self._row_count = 0
 		self._db_path = db_path
 		self._connection: Connection | None = None
 		self._load_data()
@@ -38,7 +37,6 @@ class TagCompleterModel(QAbstractTableModel):
 
 		option = True if order == Qt.SortOrder.DescendingOrder else False
 		self._data.sort(key=itemgetter(column), reverse=option)
-		self._row_count = len(self._data)
 
 		self.layoutChanged.emit()
 
@@ -70,7 +68,6 @@ class TagCompleterModel(QAbstractTableModel):
 
 		self._connection.close()
 		self._connection = None
-		self._row_count = len(self._data)
 
 	# Overrides
 
@@ -113,4 +110,4 @@ class TagCompleterModel(QAbstractTableModel):
 		return None
 
 	def rowCount(self, parent: QModelIndex):
-		return self._row_count
+		return len(self._data)
