@@ -17,7 +17,7 @@ class TagCompleterModel(QAbstractTableModel):
 		super().__init__()
 		self._data: list[tuple[str, int]] = []
 		self._tags_by_name_asc: list[tuple[str, int]] = []
-		self._tags_by_count_desc: list[tuple[str, int]] = []
+		self._tags_by_count_asc: list[tuple[str, int]] = []
 		self._row_count = 0
 		self._db_path = db_path
 		self._connection: Connection | None = None
@@ -27,7 +27,7 @@ class TagCompleterModel(QAbstractTableModel):
 		# initialized correctly. This model holds presorted data for
 		# performance reasons, so sort() just assigns the corresponding
 		# list for data().
-		self.sort(TagCompleterModel.Column.NAME)
+		self.sort(self.Column.NAME)
 
 	def get_max_count_len(self):
 		value = max(column[1] for column in self._data)
@@ -43,11 +43,17 @@ class TagCompleterModel(QAbstractTableModel):
 		"""Can pass TagCompleterModel.Column enum values for the column parameter."""
 		self.layoutAboutToBeChanged.emit()
 
-		if column == 0 and order == Qt.SortOrder.AscendingOrder:
-			self._data = self._tags_by_name_asc
+		if column == self.Column.NAME:
+			if order == Qt.SortOrder.AscendingOrder:
+				self._data = self._tags_by_name_asc
+			else:
+				self._data = self._tags_by_name_asc[::-1]
 
-		if column == 1 and order == Qt.SortOrder.DescendingOrder:
-			self._data = self._tags_by_count_desc
+		if column == self.Column.POST_COUNT:
+			if order == Qt.SortOrder.AscendingOrder:
+				self._data = self._tags_by_count_asc
+			else:
+				self._data = self._tags_by_count_asc[::-1]
 
 		self._row_count = len(self._data)
 
@@ -73,14 +79,13 @@ class TagCompleterModel(QAbstractTableModel):
 		try:
 			cursor = self._connection.cursor()
 
-			# Load tags & post count. Replacing underscores and sorting ~50k
-			# tags twice is much faster with an indexed database.
+			# Load tags & post count. The copy is for quickly sorting on post count.
 
 			cursor.execute("SELECT REPLACE(name, '_', ' ') AS name, post_count FROM tags ORDER BY name ASC")
 			self._tags_by_name_asc = [(row["name"], row["post_count"]) for row in cursor.fetchall()]
 
-			cursor.execute("SELECT REPLACE(name, '_', ' ') AS name, post_count FROM tags ORDER BY post_count DESC")
-			self._tags_by_count_desc = [(row["name"], row["post_count"]) for row in cursor.fetchall()]
+			cursor.execute("SELECT REPLACE(name, '_', ' ') AS name, post_count FROM tags ORDER BY post_count ASC")
+			self._tags_by_count_asc = [(row["name"], row["post_count"]) for row in cursor.fetchall()]
 
 		except sqlite3.Error as exception:
 			print(f"Error querying database: {str(exception)}")
