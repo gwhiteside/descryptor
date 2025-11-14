@@ -2,6 +2,7 @@ import os.path
 import sqlite3
 import sys
 from enum import StrEnum, auto, Enum, IntEnum
+from operator import itemgetter
 from os import PathLike
 from sqlite3 import Connection
 
@@ -15,22 +16,14 @@ class TagCompleterModel(QAbstractTableModel):
 
 	def __init__(self, db_path: str | PathLike):
 		super().__init__()
-		self._data: list[tuple[str, int]] = []
-		self._tags_by_name_asc: list[tuple[str, int]] = []
-		self._tags_by_count_asc: list[tuple[str, int]] = []
+		self._data: list[tuple[str, str]] = []
 		self._row_count = 0
 		self._db_path = db_path
 		self._connection: Connection | None = None
-
 		self._load_data()
-		# sort() needs to be called once just to ensure everything is
-		# initialized correctly. This model holds presorted data for
-		# performance reasons, so sort() just assigns the corresponding
-		# list for data().
-		self.sort(self.Column.NAME)
 
 	def get_max_count_len(self):
-		value = max(column[1] for column in self._data)
+		value = max(data[1] for data in self._data)
 		return len(str(value))
 
 	def get_top_percentile_tag_len(self, percentile: int):
@@ -43,18 +36,8 @@ class TagCompleterModel(QAbstractTableModel):
 		"""Can pass TagCompleterModel.Column enum values for the column parameter."""
 		self.layoutAboutToBeChanged.emit()
 
-		if column == self.Column.NAME:
-			if order == Qt.SortOrder.AscendingOrder:
-				self._data = self._tags_by_name_asc
-			else:
-				self._data = self._tags_by_name_asc[::-1]
-
-		if column == self.Column.POST_COUNT:
-			if order == Qt.SortOrder.AscendingOrder:
-				self._data = self._tags_by_count_asc
-			else:
-				self._data = self._tags_by_count_asc[::-1]
-
+		option = True if order == Qt.SortOrder.DescendingOrder else False
+		self._data.sort(key=itemgetter(column), reverse=option)
 		self._row_count = len(self._data)
 
 		self.layoutChanged.emit()
@@ -79,13 +62,8 @@ class TagCompleterModel(QAbstractTableModel):
 		try:
 			cursor = self._connection.cursor()
 
-			# Load tags & post count. The copy is for quickly sorting on post count.
-
 			cursor.execute("SELECT REPLACE(name, '_', ' ') AS name, post_count FROM tags ORDER BY name ASC")
-			self._tags_by_name_asc = [(row["name"], row["post_count"]) for row in cursor.fetchall()]
-
-			cursor.execute("SELECT REPLACE(name, '_', ' ') AS name, post_count FROM tags ORDER BY post_count ASC")
-			self._tags_by_count_asc = [(row["name"], row["post_count"]) for row in cursor.fetchall()]
+			self._data = [(row["name"], row["post_count"]) for row in cursor.fetchall()]
 
 		except sqlite3.Error as exception:
 			print(f"Error querying database: {str(exception)}")
@@ -100,16 +78,8 @@ class TagCompleterModel(QAbstractTableModel):
 		return 2
 
 	def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole):
-		if not index.isValid() or index.row() >= self._row_count:
-			return None
-
 		if role == Qt.ItemDataRole.DisplayRole or role == Qt.ItemDataRole.EditRole:
-			name, count = self._data[index.row()]
-
-			if index.column() == 0:
-				return name
-			elif index.column() == 1:
-				return str(count)
+			return self._data[index.row()][index.column()]
 
 		if role == Qt.ItemDataRole.TextAlignmentRole and index.column() == 0:
 			return Qt.AlignmentFlag.AlignLeft

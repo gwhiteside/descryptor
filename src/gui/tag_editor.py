@@ -14,8 +14,8 @@ class TagEditorWidget(QWidget):
 	_alpha_completer: QCompleter = None
 	_count_completer: QCompleter = None
 
-	def __init__(self):
-		super().__init__()
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
 		self.db_path = "data/danbooru.db"
 
 		vbox = QVBoxLayout()
@@ -27,35 +27,30 @@ class TagEditorWidget(QWidget):
 		vbox.addWidget(self.line_edit)
 		vbox.addWidget(self.list_view)
 
-		proxy = QSortFilterProxyModel()
 		model = self._completion_model_instance()
-		proxy.setSourceModel(model)
-		proxy.setDynamicSortFilter(False)
-		#completer = self._count_completer_instance()
+
 		completer = QCompleter()
-		completer.setModel(proxy)
+		completer.setModel(model)
 		completer.setCompletionColumn(model.Column.NAME)
-		#completer.setModel(model)
 		#completer.setModelSorting(QCompleter.ModelSorting.CaseInsensitivelySortedModel)
 		completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
 		completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
 		completer.setFilterMode(Qt.MatchFlag.MatchContains)
 		completer.setMaxVisibleItems(10)
 
+		# Once you completer.setModel(), you can model.sort() to get sorted completions
 		model.sort(model.Column.POST_COUNT, Qt.SortOrder.DescendingOrder)
 
 		table_view = QTableView()
 		completer.setPopup(table_view)
 		table_view.horizontalHeader().setVisible(False)
 		table_view.setShowGrid(False)
+		# table_view.setGridStyle(Qt.PenStyle.NoPen)
 		table_view.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+
 		metrics = table_view.fontMetrics()
-
-
 		tag_width = metrics.averageCharWidth() * model.get_top_percentile_tag_len(99)
 		count_width = metrics.averageCharWidth() * (model.get_max_count_len() + 1)
-		#table_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-		#table_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
 		table_view.setFixedWidth(tag_width + count_width)
 		table_view.setWordWrap(False)
@@ -68,28 +63,27 @@ class TagEditorWidget(QWidget):
 		table_view.setColumnWidth(1, count_width)
 		table_view.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
 		table_view.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
-		#table_view.setGridStyle(Qt.PenStyle.NoPen)
 
-
-		popup = completer.popup()
-		#popup.setUniformItemSizes(True) # greatly increases responsiveness for free here
-		#popup.setMinimumSize
-		#popup.setLayoutMode(QListView.LayoutMode.Batched) # greatly increases responsiveness, but flickers
-		#popup.setBatchSize(100)
-
-		self.line_edit.setCompleter(completer) # don't forget to do this if not using on_text_edited hack
+		# # Optimizations for a QListView popup
+		# popup = completer.popup()
+		# popup.setUniformItemSizes(True) # greatly increases responsiveness for free
+		# popup.setMinimumSize
+		# popup.setLayoutMode(QListView.LayoutMode.Batched) # greatly increases responsiveness, but flickers
+		# popup.setBatchSize(100)
 
 		def on_text_edited(text):
 			"""Intended to restrict matching to minimum number of characters, but performance is
 			very good regardless, so it's a matter of taste now."""
-			if len(text) >= 1:
+			if len(text) >= 3:
 				if self.line_edit.completer() is None:
 					self.line_edit.setCompleter(completer)
 			else:
 				if self.line_edit.completer() is not None:
 					self.line_edit.setCompleter(None)
 
-		#self.line_edit.textEdited.connect(on_text_edited)
+		# self.line_edit.setCompleter(completer) # don't forget to do this if not using on_text_edited hack
+
+		self.line_edit.textEdited.connect(on_text_edited)
 
 		self.line_edit.returnPressed.connect(self.add_tag)
 		delete_shortcut = QShortcut(QKeySequence.StandardKey.Delete, self.list_view)
@@ -133,39 +127,11 @@ class TagEditorWidget(QWidget):
 		model.rowsInserted.connect(self.on_data_changed)
 		model.rowsRemoved.connect(self.on_data_changed)
 
-	def _alpha_completer_instance(self):
-		if TagEditorWidget._alpha_completer is None:
-			proxy = SortProxy()
-			proxy.setSourceModel(self._completion_model_instance())
-
-			completer = QCompleter()
-			completer.setModel(proxy)
-			completer.setCompletionColumn(0)
-
-			TagEditorWidget._alpha_completer = completer
-
-		return TagEditorWidget._alpha_completer
-
 	def _completion_model_instance(self):
 		if TagEditorWidget._completion_model is None:
 			TagEditorWidget._completion_model = TagCompleterModel(self.db_path)
 
 		return TagEditorWidget._completion_model
-
-	def _count_completer_instance(self):
-		if TagEditorWidget._count_completer is None:
-			proxy = SortProxy()
-			proxy.setSourceModel(self._completion_model_instance())
-			proxy.sort(1, Qt.SortOrder.DescendingOrder)
-
-			completer = QCompleter()
-			completer.setModel(proxy)
-			completer.setCompletionColumn(0)
-
-			TagEditorWidget._count_completer = completer
-
-		return TagEditorWidget._count_completer
-
 
 class TagEditor(SwapDock):
 	def __init__(self, *args, **kwargs):
