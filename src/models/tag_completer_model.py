@@ -1,5 +1,7 @@
 import os.path
 import sqlite3
+import sys
+from enum import StrEnum, auto, Enum, IntEnum
 from os import PathLike
 from sqlite3 import Connection
 
@@ -7,14 +9,25 @@ from PyQt6.QtCore import QModelIndex, Qt, QAbstractTableModel
 
 
 class TagCompleterModel(QAbstractTableModel):
+	class Column(IntEnum):
+		NAME = 0
+		POST_COUNT = 1
+
 	def __init__(self, db_path: str | PathLike):
 		super().__init__()
-		self._data = list[tuple[str, int]]
+		self._data: list[tuple[str, int]] = []
+		self._tags_by_name_asc: list[tuple[str, int]] = []
+		self._tags_by_count_desc: list[tuple[str, int]] = []
 		self._row_count = 0
 		self._db_path = db_path
 		self._connection: Connection | None = None
+
 		self._load_data()
-		print("max count: ", self.get_max_count_len())
+		# sort() needs to be called once just to ensure everything is
+		# initialized correctly. This model holds presorted data for
+		# performance reasons, so sort() just assigns the corresponding
+		# list for data().
+		self.sort(TagCompleterModel.Column.NAME)
 
 	def get_max_count_len(self):
 		value = max(column[1] for column in self._data)
@@ -25,6 +38,20 @@ class TagCompleterModel(QAbstractTableModel):
 		k_index = int(percentile / 100 * (len(tag_lengths) - 1))
 		k = tag_lengths[k_index]
 		return k
+
+	def sort(self, column: int, order: Qt.SortOrder = Qt.SortOrder.AscendingOrder):
+		"""Can pass TagCompleterModel.Column enum values for the column parameter."""
+		self.layoutAboutToBeChanged.emit()
+
+		if column == 0 and order == Qt.SortOrder.AscendingOrder:
+			self._data = self._tags_by_name_asc
+
+		if column == 1 and order == Qt.SortOrder.DescendingOrder:
+			self._data = self._tags_by_count_desc
+
+		self._row_count = len(self._data)
+
+		self.layoutChanged.emit()
 
 	def _connect_database(self):
 		if not os.path.exists(self._db_path):
@@ -45,10 +72,16 @@ class TagCompleterModel(QAbstractTableModel):
 
 		try:
 			cursor = self._connection.cursor()
+
+			# Load tags & post count. Replacing underscores and sorting ~50k
+			# tags twice is much faster with an indexed database.
+
 			cursor.execute("SELECT REPLACE(name, '_', ' ') AS name, post_count FROM tags ORDER BY name ASC")
-			self.layoutAboutToBeChanged.emit()
-			self._data = [(row["name"], row["post_count"]) for row in cursor.fetchall()]
-			self.layoutChanged.emit()
+			self._tags_by_name_asc = [(row["name"], row["post_count"]) for row in cursor.fetchall()]
+
+			cursor.execute("SELECT REPLACE(name, '_', ' ') AS name, post_count FROM tags ORDER BY post_count DESC")
+			self._tags_by_count_desc = [(row["name"], row["post_count"]) for row in cursor.fetchall()]
+
 		except sqlite3.Error as exception:
 			print(f"Error querying database: {str(exception)}")
 

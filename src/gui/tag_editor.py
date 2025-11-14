@@ -8,28 +8,14 @@ from models.tag_completer_model import TagCompleterModel
 from gui.swap_dock import SwapDock
 
 
-class SortProxy(QSortFilterProxyModel):
-	def __init__(self):
-		super().__init__()
-
-	def lessThan(self, left: QModelIndex, right: QModelIndex):
-		column = left.column()
-		left_data = self.sourceModel().data(left)
-		right_data = self.sourceModel().data(right)
-
-		if column == 1: # count column
-			return int(left_data) > int(right_data)
-		return str(left_data) < str(right_data)
-
-
 class TagEditorWidget(QWidget):
 	data_changed = pyqtSignal()
 	_completion_model: TagCompleterModel = None
 	_alpha_completer: QCompleter = None
 	_count_completer: QCompleter = None
 
-	def __init__(self, *args, **kwargs):
-		super().__init__(*args, **kwargs)
+	def __init__(self):
+		super().__init__()
 		self.db_path = "data/danbooru.db"
 
 		vbox = QVBoxLayout()
@@ -41,14 +27,22 @@ class TagEditorWidget(QWidget):
 		vbox.addWidget(self.line_edit)
 		vbox.addWidget(self.list_view)
 
-		completer = self._count_completer_instance()
-		#completer = QCompleter()
+		proxy = QSortFilterProxyModel()
+		model = self._completion_model_instance()
+		proxy.setSourceModel(model)
+		proxy.setDynamicSortFilter(False)
+		#completer = self._count_completer_instance()
+		completer = QCompleter()
+		completer.setModel(proxy)
+		completer.setCompletionColumn(model.Column.NAME)
 		#completer.setModel(model)
-		completer.setModelSorting(QCompleter.ModelSorting.CaseInsensitivelySortedModel)
+		#completer.setModelSorting(QCompleter.ModelSorting.CaseInsensitivelySortedModel)
 		completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
 		completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
 		completer.setFilterMode(Qt.MatchFlag.MatchContains)
 		completer.setMaxVisibleItems(10)
+
+		model.sort(model.Column.POST_COUNT, Qt.SortOrder.DescendingOrder)
 
 		table_view = QTableView()
 		completer.setPopup(table_view)
@@ -56,7 +50,7 @@ class TagEditorWidget(QWidget):
 		table_view.setShowGrid(False)
 		table_view.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 		metrics = table_view.fontMetrics()
-		model = self._completion_model_instance()
+
 
 		tag_width = metrics.averageCharWidth() * model.get_top_percentile_tag_len(99)
 		count_width = metrics.averageCharWidth() * (model.get_max_count_len() + 1)
@@ -143,14 +137,10 @@ class TagEditorWidget(QWidget):
 		if TagEditorWidget._alpha_completer is None:
 			proxy = SortProxy()
 			proxy.setSourceModel(self._completion_model_instance())
-			# proxy.setDynamicSortFilter(True)
-			# proxy.setFilterKeyColumn(0)
-			# proxy.sort(0, Qt.SortOrder.AscendingOrder)
 
 			completer = QCompleter()
 			completer.setModel(proxy)
 			completer.setCompletionColumn(0)
-			completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
 
 			TagEditorWidget._alpha_completer = completer
 
@@ -166,12 +156,11 @@ class TagEditorWidget(QWidget):
 		if TagEditorWidget._count_completer is None:
 			proxy = SortProxy()
 			proxy.setSourceModel(self._completion_model_instance())
-			proxy.sort(1, Qt.SortOrder.AscendingOrder)
+			proxy.sort(1, Qt.SortOrder.DescendingOrder)
 
 			completer = QCompleter()
 			completer.setModel(proxy)
 			completer.setCompletionColumn(0)
-			completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
 
 			TagEditorWidget._count_completer = completer
 

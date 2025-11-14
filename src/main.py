@@ -4,6 +4,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QApplication
 from gui.main_window import MainWindow
 from settings.config import Config, APP_NAME
+from util.stopwatch import Stopwatch
 
 """
 Currently there's a library bug causing issues with Wayland.
@@ -18,8 +19,9 @@ if __name__ == "__main__":
 	application.setApplicationDisplayName(APP_NAME)
 
 	Config.initialize()
-
+	Stopwatch.start()
 	window = MainWindow()
+	Stopwatch.stop()
 	window.show()
 
 	sys.exit(application.exec())
